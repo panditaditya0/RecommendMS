@@ -20,7 +20,7 @@ jobs:
           cd ProcessProductDetails
           ls
           mvn clean package -DskipTests
-          sudo docker build --build-arg GIT_COMMIT=${rev} -t ProcessProductDetails/t:latest -f Dockerfile .
-          sudo docker image tag ProcessProductDetails/t nexus.ppustage.dev/processproductdetailsservice:${rev}
+          sudo docker build --build-arg GIT_COMMIT=${rev} -t process-product-details/t:latest -f Dockerfile .
+          sudo docker image tag process-product-details/t nexus.ppustage.dev/process-product-details-service:${rev}
           sudo docker login -u docker-psl -p 1q2w3e nexus.ppustage.dev
-          sudo docker push nexus.ppustage.dev/processproductdetailsservice:${rev}
+          sudo docker push nexus.ppustage.dev/process-product-details-service:${rev}
