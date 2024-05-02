@@ -23,6 +23,15 @@ public class RequestPayload {
     @Id
     public long entity_id;
     public String uuid;
+    public String color;
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
 
     public String getSku_id() {
         return sku_id;
