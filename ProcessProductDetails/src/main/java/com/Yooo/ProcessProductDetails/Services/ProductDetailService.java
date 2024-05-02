@@ -49,7 +49,7 @@ public class ProductDetailService {
 
     public void processProductDetails(List<RequestPayload> allProductDetails) {
         for (RequestPayload productDetails : allProductDetails) {
-            Config config = new Config("http", "localhost:9090");
+            Config config = new Config("http", "164.92.160.25:9090");
             WeaviateClient client = new WeaviateClient(config);
             Result<Meta> meta = client.misc().metaGetter().run();
             if (meta.getError() == null) {
