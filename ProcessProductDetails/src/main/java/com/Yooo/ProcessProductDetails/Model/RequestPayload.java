@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 @Entity
+@Table(name = "product_details")
 public class RequestPayload {
     public String sku_id;
     public String product_id;
