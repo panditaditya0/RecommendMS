@@ -69,47 +69,49 @@ public class ProductDetailService {
                 finalObject = this.updateProductDetailsToDb(productDetails);
             }
             RequestPayload finalObject1 = finalObject;
+            if(Boolean.valueOf(System.getenv("download_image"))){
+                String baseUrl = System.getenv("download_image_base_url");
+                try {
+                    URL url = new URL(finalObject1.image_link);
+                    InputStream inputStream = url.openStream();
+                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                    }
+                    byte[] imageBytes = outputStream.toByteArray();
+                    String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+                    inputStream.close();
+                    outputStream.close();
 
-            try {
-                URL url = new URL(finalObject1.image_link);
-                InputStream inputStream = url.openStream();
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
-                }
-                byte[] imageBytes = outputStream.toByteArray();
-                String base64Image = Base64.getEncoder().encodeToString(imageBytes);
-                inputStream.close();
-                outputStream.close();
-
-                Result<WeaviateObject> result = client.data().creator()
-                        .withClassName(className)
-                        .withProperties(new HashMap<String, Object>() {{
-                            put("image", base64Image);
-                            put("entity_id", String.valueOf(finalObject1.entity_id));
-                            put("sku_id", finalObject1.sku_id);
-                            put("product_id", finalObject1.product_id);
-                            put("title", finalObject1.title);
-                            put("discounted_price", String.valueOf(finalObject1.discounted_price));
-                            put("region_sale_price", String.valueOf(finalObject1.region_sale_price));
-                            put("brand", finalObject1.brand);
-                            put("image_link", finalObject1.image_link);
+                    Result<WeaviateObject> result = client.data().creator()
+                            .withClassName(className)
+                            .withProperties(new HashMap<String, Object>() {{
+                                put("image", base64Image);
+                                put("entity_id", String.valueOf(finalObject1.entity_id));
+                                put("sku_id", finalObject1.sku_id);
+                                put("product_id", finalObject1.product_id);
+                                put("title", finalObject1.title);
+                                put("discounted_price", String.valueOf(finalObject1.discounted_price));
+                                put("region_sale_price", String.valueOf(finalObject1.region_sale_price));
+                                put("brand", finalObject1.brand);
+                                put("image_link", baseUrl+finalObject1.image_link);
 //                        put("discount", finalObject1.discount);
-                            put("link", finalObject1.link);
-                            put("mad_id", finalObject1.mad_id);
-                            put("sale_price", String.valueOf(finalObject1.sale_price));
-                            put("price", String.valueOf(finalObject1.price));
-                            put("uuid", finalObject1.uuid.toString());
-                        }})
-                        .withID(finalObject1.uuid.toString())
-                        .withVector(Collections.nCopies(1536, 0.12345f).toArray(new Float[0]))
-                        .run();
+                                put("link", finalObject1.link);
+                                put("mad_id", finalObject1.mad_id);
+                                put("sale_price", String.valueOf(finalObject1.sale_price));
+                                put("price", String.valueOf(finalObject1.price));
+                                put("uuid", finalObject1.uuid.toString());
+                            }})
+                            .withID(finalObject1.uuid.toString())
+                            .withVector(Collections.nCopies(1536, 0.12345f).toArray(new Float[0]))
+                            .run();
 
-                LOGGER.info("RESPONSE -> " + finalObject1.sku_id + " " + result.toString());
-            } catch (Exception ex) {
-                LOGGER.error("ERROR -> " + finalObject1.sku_id + " " + ex.getMessage() + ex.getStackTrace());
+                    LOGGER.info("RESPONSE -> " + finalObject1.sku_id + " " + result.toString());
+                } catch (Exception ex) {
+                    LOGGER.error("ERROR -> " + finalObject1.sku_id + " " + ex.getMessage() + ex.getStackTrace());
+                }
             }
         }
     }
