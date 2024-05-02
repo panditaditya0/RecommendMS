@@ -17,8 +17,17 @@ public class RequestPayload {
     public double sale_price;
     public String ontology;
     public double price;
-    public long entity_id;
+    public String entity_id;
     public String uuid;
+    public String color;
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
 
     public String getSku_id() {
         return sku_id;
@@ -124,11 +133,11 @@ public class RequestPayload {
         this.price = price;
     }
 
-    public long getEntity_id() {
+    public String getEntity_id() {
         return entity_id;
     }
 
-    public void setEntity_id(long entity_id) {
+    public void setEntity_id(String entity_id) {
         this.entity_id = entity_id;
     }
 
@@ -144,7 +153,7 @@ public class RequestPayload {
         return Stream.of(sku_id,product_id
                         ,title, discounted_price, region_sale_price
                         ,brand,image_link, discount, link, mad_id
-                        , sale_price, ontology,price)
+                        , sale_price, ontology,price, color)
                 .anyMatch(Objects::isNull);
     }
 }
