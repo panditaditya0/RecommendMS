@@ -30,15 +30,19 @@ public class ProductDetailService {
         this.imageRepo = imageRep;
     }
     private KafkaPayload updateProductDetailsToDb(KafkaPayload productDetails) {
-        Optional op = imageRepo.findById(productDetails.getEntity_id());
-        if(op.isPresent()){
-            KafkaPayload productDetailsFromSb = (KafkaPayload) op.get();
-            productDetails.setUuid(productDetailsFromSb.getUuid());
-            return imageRepo.save(productDetails);
-        } else {
+        try{
+            Optional op = imageRepo.findById(productDetails.getEntity_id());
+            if(op.isPresent()){
+                KafkaPayload productDetailsFromSb = (KafkaPayload) op.get();
+                productDetails.setUuid(productDetailsFromSb.getUuid());
+            } else {
+                LOGGER.error("ERROR UPDATING "+ productDetails.getEntity_id());
+            }
+        } catch (Exception ex){
             LOGGER.error("ERROR UPDATING "+ productDetails.getEntity_id());
         }
-        return null;
+        LOGGER.debug("UPDATED IN DB "+ productDetails.getEntity_id());
+        return imageRepo.save(productDetails);
     }
 
     private void saveImageDetailsToDb(KafkaPayload productDetails ) {
@@ -53,7 +57,7 @@ public class ProductDetailService {
     public void processProductDetails(List<RequestPayload> allProductDetails) {
         for (RequestPayload productDetails : allProductDetails) {
             KafkaPayload aKafkaProductPayload = this.parentChildCategoryCorrection(productDetails);
-            Config config = new Config("http", "164.92.160.25:9090");
+            Config config = new Config("http", "164.92.160.25:8080");
             WeaviateClient client = new WeaviateClient(config);
             Result<Meta> meta = client.misc().metaGetter().run();
             if (meta.getError() == null) {
@@ -66,12 +70,11 @@ public class ProductDetailService {
             Optional productDetailsOptional = imageRepo.findById(aKafkaProductPayload.getEntity_id());
             KafkaPayload finalObject = aKafkaProductPayload;
             if (productDetailsOptional.isEmpty()) {
-                LOGGER.info("Entity if -> " + aKafkaProductPayload.getEntity_id() + " not present, creating new entry in db");
                 this.saveImageDetailsToDb(aKafkaProductPayload);
             } else {
-                LOGGER.info("Entity if -> " + aKafkaProductPayload.getEntity_id() + " exists, updating entry in db");
                 finalObject = this.updateProductDetailsToDb(aKafkaProductPayload);
             }
+
             KafkaPayload finalObject1 = aKafkaProductPayload;
             if(Boolean.valueOf(System.getenv("download_image"))){
                 String baseUrl = System.getenv("download_image_base_url");
@@ -112,7 +115,7 @@ public class ProductDetailService {
                             .withVector(Collections.nCopies(1536, 0.12345f).toArray(new Float[0]))
                             .run();
 
-                    LOGGER.info("RESPONSE -> " + finalObject1.sku_id + " " + result.toString());
+                    LOGGER.info("COMPLETED -> " + finalObject1.sku_id + " ");
                 } catch (Exception ex) {
                     LOGGER.error("ERROR -> " + finalObject1.sku_id + " " + ex.getMessage() + ex.getStackTrace());
                 }

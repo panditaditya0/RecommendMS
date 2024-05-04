@@ -21,7 +21,40 @@ public class KafkaConfig {
     public ProductDetailService productDetailService;
 
     @KafkaListener(topics = "testTopic", groupId = "group-1")
-    public void consume(List<LinkedHashMap> productDetails) throws IOException {
+    public void consume1(List<LinkedHashMap> productDetails) throws IOException {
+        List<RequestPayload> productDetails2 = new ArrayList<>();
+        for (LinkedHashMap aProductDetails : productDetails) {
+            final ObjectMapper mapper = new ObjectMapper();
+            productDetails2.add(mapper.convertValue(aProductDetails, RequestPayload.class));
+        }
+
+        productDetailService.processProductDetails(productDetails2);
+    }
+
+    @KafkaListener(topics = "testTopic", groupId = "group-1")
+    public void consume2(List<LinkedHashMap> productDetails) throws IOException {
+        List<RequestPayload> productDetails2 = new ArrayList<>();
+        for (LinkedHashMap aProductDetails : productDetails) {
+            final ObjectMapper mapper = new ObjectMapper();
+            productDetails2.add(mapper.convertValue(aProductDetails, RequestPayload.class));
+        }
+
+        productDetailService.processProductDetails(productDetails2);
+    }
+
+    @KafkaListener(topics = "testTopic", groupId = "group-1")
+    public void consume3(List<LinkedHashMap> productDetails) throws IOException {
+        List<RequestPayload> productDetails2 = new ArrayList<>();
+        for (LinkedHashMap aProductDetails : productDetails) {
+            final ObjectMapper mapper = new ObjectMapper();
+            productDetails2.add(mapper.convertValue(aProductDetails, RequestPayload.class));
+        }
+
+        productDetailService.processProductDetails(productDetails2);
+    }
+
+    @KafkaListener(topics = "testTopic", groupId = "group-1")
+    public void consume4(List<LinkedHashMap> productDetails) throws IOException {
         List<RequestPayload> productDetails2 = new ArrayList<>();
         for (LinkedHashMap aProductDetails : productDetails) {
             final ObjectMapper mapper = new ObjectMapper();
