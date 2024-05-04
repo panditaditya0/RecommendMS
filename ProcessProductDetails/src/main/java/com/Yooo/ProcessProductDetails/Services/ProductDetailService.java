@@ -24,7 +24,7 @@ public class ProductDetailService {
     private Logger LOGGER = LoggerFactory.getLogger(ProductDetailService.class);
     public ImageRepo imageRepo;
     public final String className = "TestImg6";  // Replace with your class name
-    public static Set<String> PARENT_CATEGORY = new HashSet<>(Arrays.asList("lehengas", "sarees"));
+    public static Set<String> PARENT_CATEGORY = new HashSet<>(Arrays.asList("lehenga", "sarees", "gown", "dresses", "kurta set", "jacket", "jumpsuits"));
 
     public ProductDetailService(ImageRepo imageRep){
         this.imageRepo = imageRep;
