@@ -1,6 +1,6 @@
 package com.similarimage.SimilarImagePublisher.Kafka;
 
-import com.Yooo.ProcessProductDetails.Model.RequestPayload;
+import com.similarimage.SimilarImagePublisher.Model.RequestPayload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

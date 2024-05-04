@@ -22,8 +22,6 @@ public class KafkaConfig {
 
     @KafkaListener(topics = "testTopic", groupId = "group-1")
     public void consume(List<LinkedHashMap> productDetails) throws IOException {
-        LOGGER.debug("download_image -> "+ System.getenv("download_image"));
-        LOGGER.debug("download_image_base_url-> "+  System.getenv("download_image_base_url"));
         List<RequestPayload> productDetails2 = new ArrayList<>();
         for (LinkedHashMap aProductDetails : productDetails) {
             final ObjectMapper mapper = new ObjectMapper();

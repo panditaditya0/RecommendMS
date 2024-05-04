@@ -1,15 +1,20 @@
 package com.Yooo.ProcessProductDetails.Model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import java.util.Set;
 
-import java.util.ArrayList;
-
+@Entity
+@Table(name = "product_details")
 @Getter
 @Setter
 @ToString
-public class RequestPayload {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class KafkaPayload {
+    @Id
     public long entity_id;
     public String sku_id;
     public String product_id;
@@ -27,5 +32,9 @@ public class RequestPayload {
     public String uuid;
     public String color;
     public String domain;
-    public ArrayList<CategoryModel> category;
+    public String parentCategory;
+
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "kafka_payload_id", referencedColumnName = "entity_id")
+    public Set<ChildCategoryModel> childCategories;
 }

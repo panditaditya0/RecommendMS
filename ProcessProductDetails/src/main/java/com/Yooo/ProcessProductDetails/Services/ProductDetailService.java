@@ -1,7 +1,11 @@
 package com.Yooo.ProcessProductDetails.Services;
 
+import com.Yooo.ProcessProductDetails.Model.CategoryModel;
+import com.Yooo.ProcessProductDetails.Model.ChildCategoryModel;
+import com.Yooo.ProcessProductDetails.Model.KafkaPayload;
 import com.Yooo.ProcessProductDetails.Model.RequestPayload;
 import com.Yooo.ProcessProductDetails.Repo.ImageRepo;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.weaviate.client.Config;
 import io.weaviate.client.WeaviateClient;
 import io.weaviate.client.base.Result;
@@ -20,16 +24,15 @@ public class ProductDetailService {
     private Logger LOGGER = LoggerFactory.getLogger(ProductDetailService.class);
     public ImageRepo imageRepo;
     public final String className = "TestImg6";  // Replace with your class name
-    public Config config;
-    public WeaviateClient client;
+    public static Set<String> PARENT_CATEGORY = new HashSet<>(Arrays.asList("lehengas", "sarees"));
 
     public ProductDetailService(ImageRepo imageRep){
         this.imageRepo = imageRep;
     }
-    private RequestPayload updateProductDetailsToDb(RequestPayload productDetails) {
+    private KafkaPayload updateProductDetailsToDb(KafkaPayload productDetails) {
         Optional op = imageRepo.findById(productDetails.getEntity_id());
         if(op.isPresent()){
-            RequestPayload productDetailsFromSb = (RequestPayload) op.get();
+            KafkaPayload productDetailsFromSb = (KafkaPayload) op.get();
             productDetails.setUuid(productDetailsFromSb.getUuid());
             return imageRepo.save(productDetails);
         } else {
@@ -38,7 +41,7 @@ public class ProductDetailService {
         return null;
     }
 
-    private void saveImageDetailsToDb(RequestPayload productDetails ) {
+    private void saveImageDetailsToDb(KafkaPayload productDetails ) {
         try{
             productDetails.uuid = UUID.randomUUID().toString();
             imageRepo.save(productDetails);
@@ -49,6 +52,7 @@ public class ProductDetailService {
 
     public void processProductDetails(List<RequestPayload> allProductDetails) {
         for (RequestPayload productDetails : allProductDetails) {
+            KafkaPayload aKafkaProductPayload = this.parentChildCategoryCorrection(productDetails);
             Config config = new Config("http", "164.92.160.25:9090");
             WeaviateClient client = new WeaviateClient(config);
             Result<Meta> meta = client.misc().metaGetter().run();
@@ -59,16 +63,16 @@ public class ProductDetailService {
             } else {
                 System.out.printf("Error: %s\n", meta.getError().getMessages());
             }
-            Optional productDetailsOptional = imageRepo.findById(productDetails.getEntity_id());
-            RequestPayload finalObject = productDetails;
+            Optional productDetailsOptional = imageRepo.findById(aKafkaProductPayload.getEntity_id());
+            KafkaPayload finalObject = aKafkaProductPayload;
             if (productDetailsOptional.isEmpty()) {
-                LOGGER.info("Entity if -> " + productDetails.getEntity_id() + " not present, creating new entry in db");
-                this.saveImageDetailsToDb(productDetails);
+                LOGGER.info("Entity if -> " + aKafkaProductPayload.getEntity_id() + " not present, creating new entry in db");
+                this.saveImageDetailsToDb(aKafkaProductPayload);
             } else {
-                LOGGER.info("Entity if -> " + productDetails.getEntity_id() + " exists, updating entry in db");
-                finalObject = this.updateProductDetailsToDb(productDetails);
+                LOGGER.info("Entity if -> " + aKafkaProductPayload.getEntity_id() + " exists, updating entry in db");
+                finalObject = this.updateProductDetailsToDb(aKafkaProductPayload);
             }
-            RequestPayload finalObject1 = finalObject;
+            KafkaPayload finalObject1 = aKafkaProductPayload;
             if(Boolean.valueOf(System.getenv("download_image"))){
                 String baseUrl = System.getenv("download_image_base_url");
                 try {
@@ -114,5 +118,26 @@ public class ProductDetailService {
                 }
             }
         }
+    }
+
+    private KafkaPayload parentChildCategoryCorrection(RequestPayload productDetails) {
+        Set<ChildCategoryModel> allChildLabel =new HashSet<>() ;
+        String parentLabel = "NoParentFound";
+        for (CategoryModel aCategoryModel : productDetails.getCategory()){
+            String tempLabel=aCategoryModel.label.toLowerCase();
+            if(!PARENT_CATEGORY.contains(tempLabel)){
+                ChildCategoryModel childCategoryModel = new ChildCategoryModel();
+                childCategoryModel.setLabel(tempLabel);
+                allChildLabel.add(childCategoryModel);
+            } else{
+                parentLabel = tempLabel;
+            }
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        KafkaPayload aPayload = mapper.convertValue(productDetails, KafkaPayload.class);
+        aPayload.setParentCategory(parentLabel);
+        aPayload.setChildCategories(allChildLabel);
+        return aPayload;
     }
 }

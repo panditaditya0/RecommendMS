@@ -1,6 +1,6 @@
 package com.similarimage.SimilarImagePublisher.Controllers;
 
-import com.Yooo.ProcessProductDetails.Model.RequestPayload;
+import com.similarimage.SimilarImagePublisher.Model.RequestPayload;
 import com.similarimage.SimilarImagePublisher.Kafka.KafkaProducerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
