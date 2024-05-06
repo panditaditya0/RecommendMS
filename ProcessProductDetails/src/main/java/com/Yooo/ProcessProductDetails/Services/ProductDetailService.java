@@ -133,7 +133,7 @@ public class ProductDetailService {
             }
         }
 
-        List<List<Map<String, Object>>> chunk = Lists.partition(dataObjs, 10);
+        List<List<Map<String, Object>>> chunk = Lists.partition(dataObjs, 3);
         ObjectsBatcher batcher = client.batch().objectsBatcher();
         for (List<Map<String, Object>> properties2 : chunk) {
             for (Map<String, Object> prop :properties2)
@@ -148,7 +148,9 @@ public class ProductDetailService {
 
         for(ObjectGetResponse b : a.getResult()){
             if(!(b.getResult().toString().contains("SUCCESS"))){
+
                 LOGGER.error("ERROR while bulk import -> " + b.getId());
+                LOGGER.error("ERROR " + b.getResult().toString());
             }
         }
     }
@@ -157,6 +159,9 @@ public class ProductDetailService {
         Set<ChildCategoryModel> allChildLabel =new HashSet<>() ;
         String parentLabel = "NoParentFound";
         for (CategoryModel aCategoryModel : productDetails.getCategory()){
+            if(null == aCategoryModel.label){
+                continue;
+            }
             String tempLabel=aCategoryModel.label.toLowerCase();
             if(!PARENT_CATEGORY.contains(tempLabel)){
                 ChildCategoryModel childCategoryModel = new ChildCategoryModel();
