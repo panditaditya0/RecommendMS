@@ -6,9 +6,12 @@ import com.Yooo.ProcessProductDetails.Model.KafkaPayload;
 import com.Yooo.ProcessProductDetails.Model.RequestPayload;
 import com.Yooo.ProcessProductDetails.Repo.ImageRepo;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import io.weaviate.client.Config;
 import io.weaviate.client.WeaviateClient;
 import io.weaviate.client.base.Result;
+import io.weaviate.client.v1.batch.api.ObjectsBatcher;
+import io.weaviate.client.v1.batch.model.ObjectGetResponse;
 import io.weaviate.client.v1.data.model.WeaviateObject;
 import io.weaviate.client.v1.misc.model.Meta;
 import org.slf4j.Logger;
@@ -23,7 +26,7 @@ import java.util.*;
 public class ProductDetailService {
     private Logger LOGGER = LoggerFactory.getLogger(ProductDetailService.class);
     public ImageRepo imageRepo;
-    public final String className = "TestImg11";  // Replace with your class name
+    public final String className = "TestImg12";  // Replace with your class name
     public static Set<String> PARENT_CATEGORY = new HashSet<>(Arrays.asList("lehenga", "sarees", "gown", "dresses", "kurta set", "jacket", "jumpsuits", "sharara set", "co-ord set","designer ghararas", "resort and beach wear","bralettes for women", "kurtas for women","designer anarkali", "jackets for women","pants","kaftans","tops","skirts"));
 
     public ProductDetailService(ImageRepo imageRep){
@@ -55,18 +58,20 @@ public class ProductDetailService {
     }
 
     public void processProductDetails(List<RequestPayload> allProductDetails) {
+        Config config = new Config("http", "164.92.160.25:8080");
+        WeaviateClient client = new WeaviateClient(config);
+        Result<Meta> meta = client.misc().metaGetter().run();
+        if (meta.getError() == null) {
+            System.out.printf("meta.hostname: %s\n", meta.getResult().getHostname());
+            System.out.printf("meta.version: %s\n", meta.getResult().getVersion());
+            System.out.printf("meta.modules: %s\n", meta.getResult().getModules());
+        } else {
+            System.out.printf("Error: %s\n", meta.getError().getMessages());
+        }
+
+        List<Map<String, Object>> dataObjs = new ArrayList<>();
         for (RequestPayload productDetails : allProductDetails) {
             KafkaPayload aKafkaProductPayload = this.parentChildCategoryCorrection(productDetails);
-            Config config = new Config("http", "164.92.160.25:8080");
-            WeaviateClient client = new WeaviateClient(config);
-            Result<Meta> meta = client.misc().metaGetter().run();
-            if (meta.getError() == null) {
-                System.out.printf("meta.hostname: %s\n", meta.getResult().getHostname());
-                System.out.printf("meta.version: %s\n", meta.getResult().getVersion());
-                System.out.printf("meta.modules: %s\n", meta.getResult().getModules());
-            } else {
-                System.out.printf("Error: %s\n", meta.getError().getMessages());
-            }
             Optional productDetailsOptional = imageRepo.findById(aKafkaProductPayload.getEntity_id());
             KafkaPayload finalObject = aKafkaProductPayload;
             if (productDetailsOptional.isEmpty()) {
@@ -76,7 +81,8 @@ public class ProductDetailService {
             }
 
             KafkaPayload finalObject1 = aKafkaProductPayload;
-            if(Boolean.valueOf(System.getenv("download_image"))  && finalObject1.brand.equalsIgnoreCase("Kalighata")){
+            if(Boolean.valueOf(System.getenv("download_image")) && finalObject1.brand.equalsIgnoreCase("Kalighata")){
+//            if(true) {
                 String baseUrl = System.getenv("download_image_base_url");
 //                String baseUrl = "https://dimension-six.perniaspopupshop.com/media/catalog/product";
 
@@ -102,35 +108,47 @@ public class ProductDetailService {
                         childCategories.add(a.getLabel());
                     }
 
-                    Result<WeaviateObject> result = client.data().creator()
-                            .withClassName(className)
-                            .withProperties(new HashMap<String, Object>() {{
-                                put("image", base64Image);
-                                put("entity_id", String.valueOf(finalObject1.entity_id));
-                                put("sku_id", finalObject1.sku_id);
-                                put("product_id", finalObject1.product_id);
-                                put("title", finalObject1.title);
-                                put("discounted_price",finalObject1.discounted_price);
-                                put("region_sale_price", finalObject1.region_sale_price);
-                                put("brand", finalObject1.brand);
-                                put("image_link", baseUrl+finalObject1.image_link);
-//                        put("discount", finalObject1.discount);
-                                put("link", finalObject1.link);
-                                put("mad_id", finalObject1.mad_id);
-                                put("sale_price", finalObject1.sale_price);
-                                put("price", finalObject1.price);
-                                put("uuid", finalObject1.uuid.toString());
-                                put("parentCategory", finalObject1.parentCategory);
-                                put("childCategories",childCategories.toArray());
-                            }})
-                            .withID(finalObject1.uuid.toString())
-                            .withVector(Collections.nCopies(1536, 0.12345f).toArray(new Float[0]))
-                            .run();
-
+                    Map<String, Object> properties = new HashMap<>();
+                    properties.put("image", base64Image);
+                    properties.put("entity_id", String.valueOf(finalObject1.entity_id));
+                    properties.put("sku_id", finalObject1.sku_id);
+                    properties.put("product_id", finalObject1.product_id);
+                    properties.put("title", finalObject1.title);
+                    properties.put("discounted_price",finalObject1.discounted_price);
+                    properties.put("region_sale_price", finalObject1.region_sale_price);
+                    properties.put("brand", finalObject1.brand);
+                    properties.put("image_link", baseUrl+finalObject1.image_link);
+                    properties.put("link", finalObject1.link);
+                    properties.put("mad_id", finalObject1.mad_id);
+                    properties.put("sale_price", finalObject1.sale_price);
+                    properties.put("price", finalObject1.price);
+                    properties.put("uuid", finalObject1.uuid.toString());
+                    properties.put("parentCategory", finalObject1.parentCategory);
+                    properties.put("childCategories",childCategories.toArray());
+                    dataObjs.add(properties);
                     LOGGER.info("COMPLETED -> " + finalObject1.sku_id + " ");
                 } catch (Exception ex) {
                     LOGGER.error("ERROR -> " + finalObject1.sku_id + " " + ex.getMessage() + ex.getStackTrace());
                 }
+            }
+        }
+
+        List<List<Map<String, Object>>> chunk = Lists.partition(dataObjs, 10);
+        ObjectsBatcher batcher = client.batch().objectsBatcher();
+        for (List<Map<String, Object>> properties2 : chunk) {
+            for (Map<String, Object> prop :properties2)
+            batcher.withObject(WeaviateObject.builder()
+                    .className(className)
+                    .properties(prop)
+                    .id(prop.get("uuid").toString())
+                    .build()
+            );
+        }
+        Result<ObjectGetResponse[]> a =  batcher.run();
+
+        for(ObjectGetResponse b : a.getResult()){
+            if(!(b.getResult().toString().contains("SUCCESS"))){
+                LOGGER.error("ERROR while bulk import -> " + b.getId());
             }
         }
     }
