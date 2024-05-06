@@ -23,7 +23,7 @@ import java.util.*;
 public class ProductDetailService {
     private Logger LOGGER = LoggerFactory.getLogger(ProductDetailService.class);
     public ImageRepo imageRepo;
-    public final String className = "TestImg6";  // Replace with your class name
+    public final String className = "TestImg11";  // Replace with your class name
     public static Set<String> PARENT_CATEGORY = new HashSet<>(Arrays.asList("lehenga", "sarees", "gown", "dresses", "kurta set", "jacket", "jumpsuits", "sharara set", "co-ord set","designer ghararas", "resort and beach wear","bralettes for women", "kurtas for women","designer anarkali", "jackets for women","pants","kaftans","tops","skirts"));
 
     public ProductDetailService(ImageRepo imageRep){
@@ -76,10 +76,12 @@ public class ProductDetailService {
             }
 
             KafkaPayload finalObject1 = aKafkaProductPayload;
-            if(Boolean.valueOf(System.getenv("download_image"))){
+            if(Boolean.valueOf(System.getenv("download_image"))  && finalObject1.brand.equalsIgnoreCase("Kalighata")){
                 String baseUrl = System.getenv("download_image_base_url");
+//                String baseUrl = "https://dimension-six.perniaspopupshop.com/media/catalog/product";
+
                 try {
-                    URL url = new URL(finalObject1.image_link);
+                    URL url = new URL(baseUrl+finalObject1.image_link);
                     InputStream inputStream = url.openStream();
                     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                     byte[] buffer = new byte[4096];
@@ -89,8 +91,16 @@ public class ProductDetailService {
                     }
                     byte[] imageBytes = outputStream.toByteArray();
                     String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+                    base64Image.replace("\n", "").replace(" ", "");
                     inputStream.close();
                     outputStream.close();
+
+                    List<String> childCategories = new ArrayList<>();
+                    Iterator it = finalObject1.childCategories.iterator();
+                    while(it.hasNext()){
+                        ChildCategoryModel a =(ChildCategoryModel) it.next();
+                        childCategories.add(a.getLabel());
+                    }
 
                     Result<WeaviateObject> result = client.data().creator()
                             .withClassName(className)
@@ -100,16 +110,18 @@ public class ProductDetailService {
                                 put("sku_id", finalObject1.sku_id);
                                 put("product_id", finalObject1.product_id);
                                 put("title", finalObject1.title);
-                                put("discounted_price", String.valueOf(finalObject1.discounted_price));
-                                put("region_sale_price", String.valueOf(finalObject1.region_sale_price));
+                                put("discounted_price",finalObject1.discounted_price);
+                                put("region_sale_price", finalObject1.region_sale_price);
                                 put("brand", finalObject1.brand);
                                 put("image_link", baseUrl+finalObject1.image_link);
 //                        put("discount", finalObject1.discount);
                                 put("link", finalObject1.link);
                                 put("mad_id", finalObject1.mad_id);
-                                put("sale_price", String.valueOf(finalObject1.sale_price));
-                                put("price", String.valueOf(finalObject1.price));
+                                put("sale_price", finalObject1.sale_price);
+                                put("price", finalObject1.price);
                                 put("uuid", finalObject1.uuid.toString());
+                                put("parentCategory", finalObject1.parentCategory);
+                                put("childCategories",childCategories.toArray());
                             }})
                             .withID(finalObject1.uuid.toString())
                             .withVector(Collections.nCopies(1536, 0.12345f).toArray(new Float[0]))
