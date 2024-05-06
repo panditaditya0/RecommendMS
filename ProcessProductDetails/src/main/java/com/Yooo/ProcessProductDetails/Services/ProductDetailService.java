@@ -44,17 +44,18 @@ public class ProductDetailService {
         } catch (Exception ex){
             LOGGER.error("ERROR UPDATING "+ productDetails.getEntity_id());
         }
-        LOGGER.debug("UPDATED IN DB "+ productDetails.getEntity_id());
+        LOGGER.info("UPDATED IN DB "+ productDetails.getEntity_id());
         return imageRepo.save(productDetails);
     }
 
-    private void saveImageDetailsToDb(KafkaPayload productDetails ) {
+    private KafkaPayload saveImageDetailsToDb(KafkaPayload productDetails ) {
         try{
             productDetails.uuid = UUID.randomUUID().toString();
             imageRepo.save(productDetails);
         } catch (Exception ex){
             LOGGER.error("ERROR FOR "+ productDetails.getEntity_id()+ ex.getMessage() + ex.getStackTrace());
         }
+        return productDetails;
     }
 
     public void processProductDetails(List<RequestPayload> allProductDetails) {
@@ -71,18 +72,19 @@ public class ProductDetailService {
 
         List<Map<String, Object>> dataObjs = new ArrayList<>();
         for (RequestPayload productDetails : allProductDetails) {
+            LOGGER.info("STARTING -> "+ productDetails.getEntity_id());
             KafkaPayload aKafkaProductPayload = this.parentChildCategoryCorrection(productDetails);
             Optional productDetailsOptional = imageRepo.findById(aKafkaProductPayload.getEntity_id());
             KafkaPayload finalObject = aKafkaProductPayload;
             if (productDetailsOptional.isEmpty()) {
-                this.saveImageDetailsToDb(aKafkaProductPayload);
+               finalObject = this.saveImageDetailsToDb(aKafkaProductPayload);
             } else {
                 finalObject = this.updateProductDetailsToDb(aKafkaProductPayload);
             }
 
             KafkaPayload finalObject1 = aKafkaProductPayload;
             if(Boolean.valueOf(System.getenv("download_image")) && finalObject1.brand.equalsIgnoreCase("Kalighata")){
-//            if(true) {
+//            if(finalObject1.brand.equalsIgnoreCase("Kalighata")) {
                 String baseUrl = System.getenv("download_image_base_url");
 //                String baseUrl = "https://dimension-six.perniaspopupshop.com/media/catalog/product";
 
@@ -133,24 +135,26 @@ public class ProductDetailService {
             }
         }
 
-        List<List<Map<String, Object>>> chunk = Lists.partition(dataObjs, 3);
-        ObjectsBatcher batcher = client.batch().objectsBatcher();
-        for (List<Map<String, Object>> properties2 : chunk) {
-            for (Map<String, Object> prop :properties2)
-            batcher.withObject(WeaviateObject.builder()
-                    .className(className)
-                    .properties(prop)
-                    .id(prop.get("uuid").toString())
-                    .build()
-            );
-        }
-        Result<ObjectGetResponse[]> a =  batcher.run();
+        if(dataObjs.size() > 0) {
+            List<List<Map<String, Object>>> chunk = Lists.partition(dataObjs, 3);
+            ObjectsBatcher batcher = client.batch().objectsBatcher();
+            for (List<Map<String, Object>> properties2 : chunk) {
+                for (Map<String, Object> prop :properties2)
+                    batcher.withObject(WeaviateObject.builder()
+                            .className(className)
+                            .properties(prop)
+                            .id(prop.get("uuid").toString())
+                            .build()
+                    );
+            }
+            Result<ObjectGetResponse[]> a =  batcher.run();
 
-        for(ObjectGetResponse b : a.getResult()){
-            if(!(b.getResult().toString().contains("SUCCESS"))){
+            for(ObjectGetResponse b : a.getResult()){
+                if(!(b.getResult().toString().contains("SUCCESS"))){
 
-                LOGGER.error("ERROR while bulk import -> " + b.getId());
-                LOGGER.error("ERROR " + b.getResult().toString());
+                    LOGGER.error("ERROR while bulk import -> " + b.getId());
+                    LOGGER.error("ERROR " + b.getResult().toString());
+                }
             }
         }
     }
