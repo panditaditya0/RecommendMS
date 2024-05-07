@@ -44,14 +44,15 @@ public class ProductDetailService {
         } catch (Exception ex){
             LOGGER.error("ERROR UPDATING "+ productDetails.getEntity_id());
         }
-        LOGGER.info("UPDATED IN DB "+ productDetails.getEntity_id());
+//        LOGGER.info("UPDATED IN DB "+ productDetails.getEntity_id());
         return imageRepo.save(productDetails);
     }
 
     private KafkaPayload saveImageDetailsToDb(KafkaPayload productDetails ) {
         try{
-            productDetails.uuid = UUID.randomUUID().toString();
+            productDetails.setUuid(UUID.randomUUID().toString());
             imageRepo.save(productDetails);
+            LOGGER.info("NEW ENTRY "+productDetails.getEntity_id());
         } catch (Exception ex){
             LOGGER.error("ERROR FOR "+ productDetails.getEntity_id()+ ex.getMessage() + ex.getStackTrace());
         }
@@ -72,7 +73,7 @@ public class ProductDetailService {
 
         List<Map<String, Object>> dataObjs = new ArrayList<>();
         for (RequestPayload productDetails : allProductDetails) {
-            LOGGER.info("STARTING -> "+ productDetails.getEntity_id());
+//            LOGGER.info("STARTING -> "+ productDetails.getEntity_id());
             KafkaPayload aKafkaProductPayload = this.parentChildCategoryCorrection(productDetails);
             Optional productDetailsOptional = imageRepo.findById(aKafkaProductPayload.getEntity_id());
             KafkaPayload finalObject = aKafkaProductPayload;
@@ -128,7 +129,7 @@ public class ProductDetailService {
                     properties.put("parentCategory", finalObject1.parentCategory);
                     properties.put("childCategories",childCategories.toArray());
                     dataObjs.add(properties);
-                    LOGGER.info("COMPLETED -> " + finalObject1.sku_id + " ");
+//                    LOGGER.info("COMPLETED -> " + finalObject1.sku_id + " ");
                 } catch (Exception ex) {
                     LOGGER.error("ERROR -> " + finalObject1.sku_id + " " + ex.getMessage() + ex.getStackTrace());
                 }
