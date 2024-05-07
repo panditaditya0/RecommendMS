@@ -148,7 +148,9 @@ public class ProductDetailService {
                             .build()
                     );
             }
-            Result<ObjectGetResponse[]> a =  batcher.run();
+            Result<ObjectGetResponse[]> a =  batcher
+                    .withConsistencyLevel("CONSISTENCY_LEVEL_ALL")
+                    .run();
 
             for(ObjectGetResponse b : a.getResult()){
                 if(!(b.getResult().toString().contains("SUCCESS"))){
