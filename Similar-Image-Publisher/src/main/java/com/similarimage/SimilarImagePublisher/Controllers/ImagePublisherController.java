@@ -23,11 +23,12 @@ public class ImagePublisherController {
         for(RequestPayload aPayload : payload){
             if(aPayload.checkAnyNull()){
                 logger.info("ERROR IN -=> " + aPayload.entity_id.toString());
+                logger.info("PAYLOAD -> " + aPayload.toString());
                 return new ResponseEntity<>("Some field is null..." , HttpStatus.BAD_REQUEST);
             }
         }
 
-//        this.kafkaProducerService.sendMessage("testTopic", payload);
+        this.kafkaProducerService.sendMessage("testTopic", payload);
         return new ResponseEntity<>("Success", HttpStatus.OK);
     }
 }
