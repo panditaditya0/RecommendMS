@@ -28,7 +28,7 @@ public class ImagePublisherController {
             }
         }
 
-        this.kafkaProducerService.sendMessage("testTopic", payload);
+//        this.kafkaProducerService.sendMessage("testTopic", payload);
         return new ResponseEntity<>("Success", HttpStatus.OK);
     }
 }
