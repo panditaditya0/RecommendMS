@@ -31,6 +31,6 @@ public class KafkaProducerService {
 
 
 //        kafkaTemplate.send(topic, message);
-        LOGGER.info("Sending message " + message + " to topic " + topic);
+//        LOGGER.info("Sending message " + message + " to topic " + topic);
     }
 }
