@@ -22,7 +22,6 @@ import org.springframework.messaging.handler.annotation.Payload;
 import java.util.*;
 
 @Configuration
-@EnableKafka
 public class KafkaConfig {
     public Logger LOGGER = LoggerFactory.getLogger(KafkaConfig.class);
     @Autowired
@@ -176,6 +175,4 @@ public class KafkaConfig {
         factory.getContainerProperties().setSyncCommits(true);
         return factory;
     }
-
-
 }
