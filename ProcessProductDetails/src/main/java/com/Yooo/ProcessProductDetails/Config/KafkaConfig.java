@@ -27,8 +27,9 @@ public class KafkaConfig {
     @Autowired
     public ProductDetailService productDetailService;
 
-    @KafkaListener(topics = "testTopic", groupId = "group-1mm")
+    @KafkaListener(topics = "testTopic", groupId = "group-69")
     public void consume1(@Payload List<HashMap<String, Object>> productDetails) {
+        LOGGER.info("CONTAINS -> lists ->  "+ productDetails.size());
         List<RequestPayload> productDetails2 = new ArrayList<>();
         try{
             for (HashMap<String, Object> aProductDetails : productDetails) {
@@ -155,7 +156,7 @@ public class KafkaConfig {
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-//        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
         return  props;
     }
