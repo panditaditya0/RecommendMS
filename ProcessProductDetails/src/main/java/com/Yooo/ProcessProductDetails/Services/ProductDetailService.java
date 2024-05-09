@@ -13,6 +13,7 @@ import io.weaviate.client.base.Result;
 import io.weaviate.client.v1.batch.api.ObjectsBatcher;
 import io.weaviate.client.v1.batch.model.ObjectGetResponse;
 import io.weaviate.client.v1.data.model.WeaviateObject;
+import io.weaviate.client.v1.data.replication.model.ConsistencyLevel;
 import io.weaviate.client.v1.misc.model.Meta;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,9 +26,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class ProductDetailService {
-    private Logger LOGGER = LoggerFactory.getLogger(ProductDetailService.class);
+    private final Logger LOGGER = LoggerFactory.getLogger(ProductDetailService.class);
     public ImageRepo imageRepo;
-    public final String className = "TestImg13";  // Replace with your class name
+    public final String className = "TestImg14";  // Replace with your class name
     public static Set<String> PARENT_CATEGORY = new HashSet<>(Arrays.asList("lehenga", "sarees", "gown", "dresses", "kurta set", "jacket", "jumpsuits", "sharara set", "co-ord set", "designer ghararas", "resort and beach wear", "bralettes for women", "kurtas for women", "designer anarkali", "jackets for women", "pants", "kaftans", "tops", "skirts"));
 
     public ProductDetailService(ImageRepo imageRep) {
@@ -84,8 +85,8 @@ public class ProductDetailService {
                     }
 
                     KafkaPayload finalObject1 = finalObject;
-                    if (true || Boolean.valueOf(System.getenv("download_image")) && finalObject1.brand.equalsIgnoreCase("Kalighata")) {
-                        if (true || finalObject1.brand.equalsIgnoreCase("Kalighata")) {
+                    if (true) {
+                        if (true) {
 //                        String baseUrl = System.getenv("download_image_base_url");
                             String baseUrl = "https://dimension-six.perniaspopupshop.com/media/catalog/product";
 
@@ -193,7 +194,7 @@ public class ProductDetailService {
                             .build());
                 }
                 Result<ObjectGetResponse[]> a = batcher
-                        .withConsistencyLevel("ALL")
+                        .withConsistencyLevel(ConsistencyLevel.ONE)
                         .run();
 
                 for (ObjectGetResponse b : a.getResult()) {
