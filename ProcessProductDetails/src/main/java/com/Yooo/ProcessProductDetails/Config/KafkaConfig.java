@@ -28,7 +28,7 @@ public class KafkaConfig {
     @Autowired
     public ProductDetailService productDetailService;
 
-    @KafkaListener(topics = "testTopic", groupId = "group-199")
+    @KafkaListener(topics = "testTopic", groupId = "group-1mm")
     public void consume1(@Payload List<HashMap<String, Object>> productDetails) {
         List<RequestPayload> productDetails2 = new ArrayList<>();
         try{
