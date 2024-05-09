@@ -9,8 +9,7 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
+import java.util.ArrayList;
 
 @Service
 public class KafkaProducerService {
@@ -22,15 +21,15 @@ public class KafkaProducerService {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public void sendMessage(String topic, List<RequestPayload> message) {
-        Message<List<RequestPayload>> message1 = MessageBuilder
+    public void sendMessage(String topic, ArrayList<RequestPayload> message) {
+        Message<ArrayList<RequestPayload>> message1 = MessageBuilder
                 .withPayload(message)
                 .setHeader(KafkaHeaders.TOPIC, "testTopic")
                 .build();
         kafkaTemplate.send(message1);
 
 
-//        kafkaTemplate.send(topic, message);
+//        kafkaTemplate.send(topic, messa/ge);
 //        LOGGER.info("Sending message " + message + " to topic " + topic);
     }
 }

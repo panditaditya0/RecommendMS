@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -31,7 +32,7 @@ public class ImagePublisherController {
 
         List<List<RequestPayload>> inputChunk = Lists.partition(payload, 3);
         for(List<RequestPayload> chunk : inputChunk){
-            this.kafkaProducerService.sendMessage("testTopic", chunk);
+            this.kafkaProducerService.sendMessage("testTopic", new ArrayList<>(chunk));
         }
 
         return new ResponseEntity<>("Success", HttpStatus.OK);
