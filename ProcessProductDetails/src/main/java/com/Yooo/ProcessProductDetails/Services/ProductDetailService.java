@@ -202,8 +202,7 @@ public class ProductDetailService {
                         LOGGER.error("ERROR while bulk import -> " + b.getId());
                         LOGGER.error("ERROR " + b.getResult().toString());
                     } else {
-                        LOGGER.error("Completed bulk import -> " + b.getId());
-
+                        LOGGER.info("Completed bulk import -> " + b.getId());
                     }
                 }
             }
