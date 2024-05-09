@@ -1,5 +1,6 @@
 package com.similarimage.SimilarImagePublisher.Controllers;
 
+import com.google.common.collect.Lists;
 import com.similarimage.SimilarImagePublisher.Model.RequestPayload;
 import com.similarimage.SimilarImagePublisher.Kafka.KafkaProducerService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +29,11 @@ public class ImagePublisherController {
             }
         }
 
-        this.kafkaProducerService.sendMessage("testTopic", payload);
+        List<List<RequestPayload>> inputChunk = Lists.partition(payload, 3);
+        for(List<RequestPayload> chunk : inputChunk){
+            this.kafkaProducerService.sendMessage("testTopic", chunk);
+        }
+
         return new ResponseEntity<>("Success", HttpStatus.OK);
     }
 }

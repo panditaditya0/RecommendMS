@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.io.*;
 import java.net.URL;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductDetailService {
@@ -61,79 +62,86 @@ public class ProductDetailService {
     }
 
     public void processProductDetails(List<RequestPayload> allProductDetails) {
-
-
         List<Map<String, Object>> dataObjs = new ArrayList<>();
+        List<RequestPayload> newAllProductDetails = allProductDetails.stream()
+                .filter(product -> product != null && product.getSku_id() != null)
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toMap(RequestPayload::getSku_id, p -> p, (p1, p2) -> p1), // Use sku as key for distinct
+                        m -> new ArrayList<>(m.values()))); // Convert map values to list
 
-        List<List<RequestPayload>> inputChunk = Lists.partition(allProductDetails, 3);
 
-        for (List<RequestPayload> chunk : inputChunk) {
-            for (RequestPayload productDetails : chunk) {
-//            LOGGER.info("STARTING -> "+ productDetails.getEntity_id());
-                KafkaPayload aKafkaProductPayload = this.parentChildCategoryCorrection(productDetails);
-                Optional productDetailsOptional = imageRepo.findById(aKafkaProductPayload.getEntity_id());
-                KafkaPayload finalObject = aKafkaProductPayload;
-                if (productDetailsOptional.isEmpty()) {
-                    finalObject = this.saveImageDetailsToDb(aKafkaProductPayload);
-                } else {
-                    finalObject = this.updateProductDetailsToDb(aKafkaProductPayload);
-                }
+        try {
+            List<List<RequestPayload>> inputChunk = Lists.partition(newAllProductDetails, 3);
+            for (List<RequestPayload> chunk : inputChunk) {
+                for (RequestPayload productDetails : chunk) {
+                    KafkaPayload aKafkaProductPayload = this.parentChildCategoryCorrection(productDetails);
+                    Optional productDetailsOptional = imageRepo.findById(aKafkaProductPayload.getEntity_id());
+                    KafkaPayload finalObject = aKafkaProductPayload;
+                    if (productDetailsOptional.isEmpty()) {
+                        finalObject = this.saveImageDetailsToDb(aKafkaProductPayload);
+                    } else {
+                        finalObject = this.updateProductDetailsToDb(aKafkaProductPayload);
+                    }
 
-                KafkaPayload finalObject1 = finalObject;
-                if (Boolean.valueOf(System.getenv("download_image")) && finalObject1.brand.equalsIgnoreCase("Kalighata")) {
-                    if (finalObject1.brand.equalsIgnoreCase("Kalighata")) {
+                    KafkaPayload finalObject1 = finalObject;
+                    if (true || Boolean.valueOf(System.getenv("download_image")) && finalObject1.brand.equalsIgnoreCase("Kalighata")) {
+                        if (true || finalObject1.brand.equalsIgnoreCase("Kalighata")) {
 //                        String baseUrl = System.getenv("download_image_base_url");
-                        String baseUrl = "https://dimension-six.perniaspopupshop.com/media/catalog/product";
+                            String baseUrl = "https://dimension-six.perniaspopupshop.com/media/catalog/product";
 
-                        try {
-                            URL url = new URL(baseUrl + finalObject1.image_link);
-                            InputStream inputStream = url.openStream();
-                            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                            byte[] buffer = new byte[4096];
-                            int bytesRead;
-                            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                                outputStream.write(buffer, 0, bytesRead);
-                            }
-                            byte[] imageBytes = outputStream.toByteArray();
-                            String base64Image = Base64.getEncoder().encodeToString(imageBytes);
-                            base64Image.replace("\n", "").replace(" ", "");
-                            inputStream.close();
-                            outputStream.close();
+                            try {
+                                URL url = new URL(baseUrl + finalObject1.image_link);
+                                InputStream inputStream = url.openStream();
+                                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                                byte[] buffer = new byte[4096];
+                                int bytesRead;
+                                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                                    outputStream.write(buffer, 0, bytesRead);
+                                }
+                                byte[] imageBytes = outputStream.toByteArray();
+                                String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+                                base64Image.replace("\n", "").replace(" ", "");
+                                inputStream.close();
+                                outputStream.close();
 
-                            List<String> childCategories = new ArrayList<>();
-                            Iterator it = finalObject1.childCategories.iterator();
-                            while (it.hasNext()) {
-                                ChildCategoryModel a = (ChildCategoryModel) it.next();
-                                childCategories.add(a.getLabel());
-                            }
+                                List<String> childCategories = new ArrayList<>();
+                                Iterator it = finalObject1.childCategories.iterator();
+                                while (it.hasNext()) {
+                                    ChildCategoryModel a = (ChildCategoryModel) it.next();
+                                    childCategories.add(a.getLabel());
+                                }
 
-                            Map<String, Object> properties = new HashMap<>();
-                            properties.put("image", base64Image);
-                            properties.put("entity_id", String.valueOf(finalObject1.entity_id));
-                            properties.put("sku_id", finalObject1.sku_id);
-                            properties.put("product_id", finalObject1.product_id);
-                            properties.put("title", finalObject1.title);
-                            properties.put("discounted_price", finalObject1.discounted_price);
-                            properties.put("region_sale_price", finalObject1.region_sale_price);
-                            properties.put("brand", finalObject1.brand);
-                            properties.put("image_link", baseUrl + finalObject1.image_link);
-                            properties.put("link", finalObject1.link);
-                            properties.put("mad_id", finalObject1.mad_id);
-                            properties.put("sale_price", finalObject1.sale_price);
-                            properties.put("price", finalObject1.price);
-                            properties.put("uuid", finalObject1.uuid.toString());
-                            properties.put("parentCategory", finalObject1.parentCategory);
-                            properties.put("childCategories", childCategories.toArray());
-                            dataObjs.add(properties);
+                                Map<String, Object> properties = new HashMap<>();
+                                properties.put("image", base64Image);
+                                properties.put("entity_id", String.valueOf(finalObject1.entity_id));
+                                properties.put("sku_id", finalObject1.sku_id);
+                                properties.put("product_id", finalObject1.product_id);
+                                properties.put("title", finalObject1.title);
+                                properties.put("discounted_price", finalObject1.discounted_price);
+                                properties.put("region_sale_price", finalObject1.region_sale_price);
+                                properties.put("brand", finalObject1.brand);
+                                properties.put("image_link", baseUrl + finalObject1.image_link);
+                                properties.put("link", finalObject1.link);
+                                properties.put("mad_id", finalObject1.mad_id);
+                                properties.put("sale_price", finalObject1.sale_price);
+                                properties.put("price", finalObject1.price);
+                                properties.put("uuid", finalObject1.uuid.toString());
+                                properties.put("parentCategory", finalObject1.parentCategory);
+                                properties.put("childCategories", childCategories.toArray());
+                                dataObjs.add(properties);
 //                    LOGGER.info("COMPLETED -> " + finalObject1.sku_id + " ");
-                        } catch (Exception ex) {
-                            LOGGER.error("ERROR -> " + finalObject1.sku_id + " " + ex.getMessage() + ex.getStackTrace());
-                        }
+                            } catch (Exception ex) {
+                                LOGGER.error("ERROR -> " + finalObject1.sku_id + " " + ex.getMessage() + ex.getStackTrace());
+                            }
 
-                        this.pushToVectorDb(dataObjs);
+                            this.pushToVectorDb(dataObjs);
+                        }
                     }
                 }
             }
+        } catch (Exception ex) {
+            LOGGER.error("ERROR -> " + ex.getMessage() + ex.getStackTrace());
+
         }
     }
 
@@ -193,6 +201,9 @@ public class ProductDetailService {
 
                         LOGGER.error("ERROR while bulk import -> " + b.getId());
                         LOGGER.error("ERROR " + b.getResult().toString());
+                    } else {
+                        LOGGER.error("Completed bulk import -> " + b.getId());
+
                     }
                 }
             }
