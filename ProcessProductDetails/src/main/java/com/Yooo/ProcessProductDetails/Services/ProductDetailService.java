@@ -135,9 +135,11 @@ public class ProductDetailService {
                                 LOGGER.error("ERROR -> " + finalObject1.sku_id + " " + ex.getMessage() + ex.getStackTrace());
                             }
 
-                            this.pushToVectorDb(dataObjs);
                         }
                     }
+                }
+                if (!dataObjs.isEmpty()) {
+                    this.pushToVectorDb(dataObjs);
                 }
             }
         } catch (Exception ex) {
