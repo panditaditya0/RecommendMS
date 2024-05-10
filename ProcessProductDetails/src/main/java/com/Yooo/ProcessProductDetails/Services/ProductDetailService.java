@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 public class ProductDetailService {
     private final Logger LOGGER = LoggerFactory.getLogger(ProductDetailService.class);
     public ImageRepo imageRepo;
-    public final String className = "TestImg15";  // Replace with your class name
+    public final String className = "TestImg16";  // Replace with your class name
     public static Set<String> PARENT_CATEGORY = new HashSet<>(Arrays.asList("lehenga", "sarees", "gown", "dresses", "kurta set", "jacket", "jumpsuits", "sharara set", "co-ord set", "designer ghararas", "resort and beach wear", "bralettes for women", "kurtas for women", "designer anarkali", "jackets for women", "pants", "kaftans", "tops", "skirts"));
 
     public ProductDetailService(ImageRepo imageRep) {
@@ -87,8 +87,9 @@ public class ProductDetailService {
                     KafkaPayload finalObject1 = finalObject;
                     if (true) {
                         if (true) {
-//                        String baseUrl = System.getenv("download_image_base_url");
-                            String baseUrl = "https://dimension-six.perniaspopupshop.com/media/catalog/product";
+                        String baseUrl = System.getenv("download_image_base_url");
+//                            String baseUrl = "https://dimension-six.perniaspopupshop.com/media/catalog/product";
+//                            String baseUrl = "https://img.perniaspopupshop.com/catalog/product";
 
                             try {
                                 URL url = new URL(baseUrl + finalObject1.image_link);
@@ -129,6 +130,7 @@ public class ProductDetailService {
                                 properties.put("uuid", finalObject1.uuid.toString());
                                 properties.put("parentCategory", finalObject1.parentCategory);
                                 properties.put("childCategories", childCategories.toArray());
+                                properties.put("color", finalObject1.color);
                                 dataObjs.add(properties);
 //                    LOGGER.info("COMPLETED -> " + finalObject1.sku_id + " ");
                             } catch (Exception ex) {
@@ -185,28 +187,25 @@ public class ProductDetailService {
                 System.out.printf("Error: %s\n", meta.getError().getMessages());
             }
 
-            List<List<Map<String, Object>>> chunk3 = Lists.partition(dataObjs, 2);
             ObjectsBatcher batcher = client.batch().objectsBatcher();
-            for (List<Map<String, Object>> properties2 : chunk3) {
-                for (Map<String, Object> prop : properties2) {
-                    batcher.withObject(WeaviateObject.builder()
-                            .className(className)
-                            .properties(prop)
-                            .id(prop.get("uuid").toString())
-                            .build());
-                }
-                Result<ObjectGetResponse[]> a = batcher
-                        .withConsistencyLevel(ConsistencyLevel.ONE)
-                        .run();
+            for (Map<String, Object> prop : dataObjs) {
+                batcher.withObject(WeaviateObject.builder()
+                        .className(className)
+                        .properties(prop)
+                        .id(prop.get("uuid").toString())
+                        .build());
+            }
+            Result<ObjectGetResponse[]> a = batcher
+                    .withConsistencyLevel(ConsistencyLevel.ONE)
+                    .run();
 
-                for (ObjectGetResponse b : a.getResult()) {
-                    if (!(b.getResult().toString().contains("SUCCESS"))) {
+            for (ObjectGetResponse b : a.getResult()) {
+                if (!(b.getResult().toString().contains("ObjectsGetResponseAO2Result(errors=null, status=null)"))) {
 
-                        LOGGER.error("ERROR while bulk import -> " + b.getId());
-                        LOGGER.error("ERROR " + b.getResult().toString());
-                    } else {
-                        LOGGER.info("Completed bulk import -> " + b.getId());
-                    }
+                    LOGGER.error("ERROR while bulk import -> " + b.getId());
+                    LOGGER.error("ERROR " + b.getResult().toString());
+                } else {
+                    LOGGER.info("Completed bulk import -> " + b.getId());
                 }
             }
         }
