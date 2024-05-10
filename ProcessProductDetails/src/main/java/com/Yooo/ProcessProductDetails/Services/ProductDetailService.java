@@ -1,5 +1,6 @@
 package com.Yooo.ProcessProductDetails.Services;
 
+import com.Yooo.ProcessProductDetails.Config.SingleWeaviateClient;
 import com.Yooo.ProcessProductDetails.Model.CategoryModel;
 import com.Yooo.ProcessProductDetails.Model.ChildCategoryModel;
 import com.Yooo.ProcessProductDetails.Model.KafkaPayload;
@@ -7,21 +8,21 @@ import com.Yooo.ProcessProductDetails.Model.RequestPayload;
 import com.Yooo.ProcessProductDetails.Repo.ImageRepo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import io.weaviate.client.Config;
-import io.weaviate.client.WeaviateClient;
 import io.weaviate.client.base.Result;
 import io.weaviate.client.v1.batch.api.ObjectsBatcher;
 import io.weaviate.client.v1.batch.model.ObjectGetResponse;
 import io.weaviate.client.v1.data.model.WeaviateObject;
 import io.weaviate.client.v1.data.replication.model.ConsistencyLevel;
-import io.weaviate.client.v1.misc.model.Meta;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.*;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,9 +31,11 @@ public class ProductDetailService {
     public ImageRepo imageRepo;
     public final String className = "TestImg16";  // Replace with your class name
     public static Set<String> PARENT_CATEGORY = new HashSet<>(Arrays.asList("lehenga", "sarees", "gown", "dresses", "kurta set", "jacket", "jumpsuits", "sharara set", "co-ord set", "designer ghararas", "resort and beach wear", "bralettes for women", "kurtas for women", "designer anarkali", "jackets for women", "pants", "kaftans", "tops", "skirts"));
+    private SingleWeaviateClient singleWeaviateClient;
 
-    public ProductDetailService(ImageRepo imageRep) {
+    public ProductDetailService(ImageRepo imageRep, SingleWeaviateClient singleWeaviateClient) {
         this.imageRepo = imageRep;
+        this.singleWeaviateClient = singleWeaviateClient;
     }
 
     private KafkaPayload updateProductDetailsToDb(KafkaPayload productDetails) {
@@ -87,25 +90,12 @@ public class ProductDetailService {
                     KafkaPayload finalObject1 = finalObject;
                     if (true) {
                         if (true) {
-                        String baseUrl = System.getenv("download_image_base_url");
+//                        String baseUrl = System.getenv("download_image_base_url");
 //                            String baseUrl = "https://dimension-six.perniaspopupshop.com/media/catalog/product";
-//                            String baseUrl = "https://img.perniaspopupshop.com/catalog/product";
+                            String baseUrl = "https://img.perniaspopupshop.com/catalog/product";
 
                             try {
-                                URL url = new URL(baseUrl + finalObject1.image_link);
-                                InputStream inputStream = url.openStream();
-                                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                                byte[] buffer = new byte[4096];
-                                int bytesRead;
-                                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                                    outputStream.write(buffer, 0, bytesRead);
-                                }
-                                byte[] imageBytes = outputStream.toByteArray();
-                                String base64Image = Base64.getEncoder().encodeToString(imageBytes);
-                                base64Image.replace("\n", "").replace(" ", "");
-                                inputStream.close();
-                                outputStream.close();
-
+                                String base64Image = downloadAndDownSizeImage(baseUrl+ finalObject1.image_link);
                                 List<String> childCategories = new ArrayList<>();
                                 Iterator it = finalObject1.childCategories.iterator();
                                 while (it.hasNext()) {
@@ -136,7 +126,6 @@ public class ProductDetailService {
                             } catch (Exception ex) {
                                 LOGGER.error("ERROR -> " + finalObject1.sku_id + " " + ex.getMessage() + ex.getStackTrace());
                             }
-
                         }
                     }
                 }
@@ -176,18 +165,7 @@ public class ProductDetailService {
 
     private void pushToVectorDb(List<Map<String, Object>> dataObjs) {
         if (dataObjs.size() > 0) {
-            Config config = new Config("http", "164.92.160.25:8080");
-            WeaviateClient client = new WeaviateClient(config);
-            Result<Meta> meta = client.misc().metaGetter().run();
-            if (meta.getError() == null) {
-                System.out.printf("meta.hostname: %s\n", meta.getResult().getHostname());
-                System.out.printf("meta.version: %s\n", meta.getResult().getVersion());
-                System.out.printf("meta.modules: %s\n", meta.getResult().getModules());
-            } else {
-                System.out.printf("Error: %s\n", meta.getError().getMessages());
-            }
-
-            ObjectsBatcher batcher = client.batch().objectsBatcher();
+            ObjectsBatcher batcher = singleWeaviateClient.weaviateClientMethod().batch().objectsBatcher();
             for (Map<String, Object> prop : dataObjs) {
                 batcher.withObject(WeaviateObject.builder()
                         .className(className)
@@ -209,5 +187,40 @@ public class ProductDetailService {
                 }
             }
         }
+    }
+
+    private String downloadAndDownSizeImage(String imageUrl){
+        try {
+            URL url = new URL(imageUrl);
+            HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
+            int responseCode = httpConn.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                InputStream inputStream = httpConn.getInputStream();
+                BufferedImage originalImage = ImageIO.read(inputStream);
+                int newWidth = (int) (originalImage.getWidth() * 0.35);
+                int newHeight = (int) (originalImage.getHeight() * 0.35);
+                BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, originalImage.getType());
+                resizedImage.createGraphics().drawImage(originalImage, 0, 0, newWidth, newHeight, null);
+
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                ImageIO.write(resizedImage, "jpg", outputStream);
+                byte[] imageBytes = outputStream.toByteArray();
+                String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+
+                base64Image.replace("\n", "").replace(" ", "");
+                inputStream.close();
+                outputStream.close();
+
+                System.out.println("Image downloaded and resized successfully.");
+                return base64Image;
+            } else {
+                System.out.println("Failed to download image. HTTP Error Code: " + responseCode);
+            }
+
+            httpConn.disconnect();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 }
