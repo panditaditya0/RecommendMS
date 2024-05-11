@@ -33,6 +33,8 @@ public class KafkaPayload {
     public String color;
     public String domain;
     public String parentCategory;
+    @Column(name = "base_64_image")
+    public String base64Image;
 
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "kafka_payload_id", referencedColumnName = "entity_id")

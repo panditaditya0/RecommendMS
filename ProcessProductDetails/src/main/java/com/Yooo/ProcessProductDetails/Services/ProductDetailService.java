@@ -73,7 +73,9 @@ public class ProductDetailService {
                         Collectors.toMap(RequestPayload::getSku_id, p -> p, (p1, p2) -> p1), // Use sku as key for distinct
                         m -> new ArrayList<>(m.values()))); // Convert map values to list
 
-
+                        String baseUrl = System.getenv("download_image_base_url");
+//                            String baseUrl = "https://dimension-six.perniaspopupshop.com/media/catalog/product";
+//        String baseUrl = "https://img.perniaspopupshop.com/catalog/product";
         try {
             List<List<RequestPayload>> inputChunk = Lists.partition(newAllProductDetails, 3);
             for (List<RequestPayload> chunk : inputChunk) {
@@ -81,6 +83,7 @@ public class ProductDetailService {
                     KafkaPayload aKafkaProductPayload = this.parentChildCategoryCorrection(productDetails);
                     Optional productDetailsOptional = imageRepo.findById(aKafkaProductPayload.getEntity_id());
                     KafkaPayload finalObject = aKafkaProductPayload;
+                    aKafkaProductPayload.base64Image = downloadAndDownSizeImage(baseUrl+ productDetails.image_link);
                     if (productDetailsOptional.isEmpty()) {
                         finalObject = this.saveImageDetailsToDb(aKafkaProductPayload);
                     } else {
@@ -90,12 +93,7 @@ public class ProductDetailService {
                     KafkaPayload finalObject1 = finalObject;
                     if (true) {
                         if (true) {
-//                        String baseUrl = System.getenv("download_image_base_url");
-//                            String baseUrl = "https://dimension-six.perniaspopupshop.com/media/catalog/product";
-                            String baseUrl = "https://img.perniaspopupshop.com/catalog/product";
-
                             try {
-                                String base64Image = downloadAndDownSizeImage(baseUrl+ finalObject1.image_link);
                                 List<String> childCategories = new ArrayList<>();
                                 Iterator it = finalObject1.childCategories.iterator();
                                 while (it.hasNext()) {
@@ -104,7 +102,7 @@ public class ProductDetailService {
                                 }
 
                                 Map<String, Object> properties = new HashMap<>();
-                                properties.put("image", base64Image);
+                                properties.put("image", finalObject1.base64Image);
                                 properties.put("entity_id", String.valueOf(finalObject1.entity_id));
                                 properties.put("sku_id", finalObject1.sku_id);
                                 properties.put("product_id", finalObject1.product_id);
