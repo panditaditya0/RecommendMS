@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-public class ProductDetailService {
+    public class ProductDetailService {
     private final Logger LOGGER = LoggerFactory.getLogger(ProductDetailService.class);
     public ImageRepo imageRepo;
     public final String className = "TestImg16";  // Replace with your class name
@@ -38,7 +38,7 @@ public class ProductDetailService {
         this.singleWeaviateClient = singleWeaviateClient;
     }
 
-    private KafkaPayload updateProductDetailsToDb(KafkaPayload productDetails) {
+    public KafkaPayload updateProductDetailsToDb(KafkaPayload productDetails) {
         try {
             Optional op = imageRepo.findById(productDetails.getEntity_id());
             if (op.isPresent()) {
@@ -161,7 +161,7 @@ public class ProductDetailService {
         return aPayload;
     }
 
-    private void pushToVectorDb(List<Map<String, Object>> dataObjs) {
+    public void pushToVectorDb(List<Map<String, Object>> dataObjs) {
         if (dataObjs.size() > 0) {
             ObjectsBatcher batcher = singleWeaviateClient.weaviateClientMethod().batch().objectsBatcher();
             for (Map<String, Object> prop : dataObjs) {
@@ -187,7 +187,7 @@ public class ProductDetailService {
         }
     }
 
-    private String downloadAndDownSizeImage(String imageUrl){
+    public String downloadAndDownSizeImage(String imageUrl){
         try {
             URL url = new URL(imageUrl);
             HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
