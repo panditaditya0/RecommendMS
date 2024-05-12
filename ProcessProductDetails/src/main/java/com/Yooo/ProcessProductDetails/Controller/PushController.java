@@ -5,15 +5,16 @@ import com.Yooo.ProcessProductDetails.Model.KafkaPayload;
 import com.Yooo.ProcessProductDetails.Repo.ImageRepo;
 import com.Yooo.ProcessProductDetails.Services.ProductDetailService;
 import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
 @RestController
 public class PushController {
+    private final Logger LOGGER = LoggerFactory.getLogger(ProductDetailService.class);
 
     @Autowired
     public ImageRepo imageRepo;
@@ -22,13 +23,13 @@ public class PushController {
     public ProductDetailService productDetailService;
 
     @CrossOrigin
-    @PostMapping("/push")
-    public void pushToWeaviate(){
+    @PostMapping("/push/{a}")
+    public void pushToWeaviate(@PathVariable String a){
         Runnable thread = new Runnable()
         {
             public void run()
             {
-                gg();
+                gg(a);
             }
         };
         System.out.println("Starting thread..");
@@ -36,9 +37,10 @@ public class PushController {
 
     }
 
-    public void gg() {
+    public void gg(String brand) {
         String baseUrl = "https://img.perniaspopupshop.com/catalog/product";
-        List<KafkaPayload> allKafkaPayload = imageRepo.findByBrand();
+        List<KafkaPayload> allKafkaPayload = imageRepo.findByBrand(brand);
+        LOGGER.info("No of products -> "+ allKafkaPayload.size());
         List<List<KafkaPayload>> inputChunk = Lists.partition(allKafkaPayload, 3);
         for (List<KafkaPayload> aChunk : inputChunk) {
             List<Map<String, Object>> dataObjs = new ArrayList<>();

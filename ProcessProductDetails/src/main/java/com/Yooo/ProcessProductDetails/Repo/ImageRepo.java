@@ -10,6 +10,6 @@ import java.util.List;
 @Repository
 public interface ImageRepo extends JpaRepository<KafkaPayload, Long> {
 
-    @Query(value="select * from product_details pd where brand = 'VASTRAA Jewellery'",  nativeQuery = true)
-    List<KafkaPayload> findByBrand();
+    @Query(value="select * from product_details pd where brand = ?1",  nativeQuery = true)
+    List<KafkaPayload> findByBrand(String brand);
 }
