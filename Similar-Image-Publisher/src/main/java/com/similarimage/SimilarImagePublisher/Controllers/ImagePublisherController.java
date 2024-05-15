@@ -22,19 +22,20 @@ public class ImagePublisherController {
 
     @PostMapping("/uploadImage")
     public ResponseEntity<String> uploadData(@RequestBody List<RequestPayload> payload){
-        for(RequestPayload aPayload : payload){
-            if(aPayload.checkAnyNull()){
-                logger.info("ERROR IN -=> " + aPayload.entity_id.toString());
-//                logger.info("PAYLOAD -> " + aPayload.toString());
-                return new ResponseEntity<>("Some field is null..." , HttpStatus.BAD_REQUEST);
+        try{
+            for(RequestPayload aPayload : payload){
+                if(aPayload.checkAnyNull()){
+                    payload.remove(aPayload);
+                    logger.info("ERROR IN -=> " + aPayload.entity_id.toString());
+                }
             }
+            List<List<RequestPayload>> inputChunk = Lists.partition(payload, 3);
+            for(List<RequestPayload> chunk : inputChunk){
+                this.kafkaProducerService.sendMessage("testTopic", new ArrayList<>(chunk));
+            }
+        } catch (Exception ex){
+            return new ResponseEntity<>("ERROR "+ ex.getMessage() + " " + ex.getStackTrace() , HttpStatus.BAD_REQUEST);
         }
-
-        List<List<RequestPayload>> inputChunk = Lists.partition(payload, 3);
-        for(List<RequestPayload> chunk : inputChunk){
-            this.kafkaProducerService.sendMessage("testTopic", new ArrayList<>(chunk));
-        }
-
         return new ResponseEntity<>("Success", HttpStatus.OK);
     }
 }

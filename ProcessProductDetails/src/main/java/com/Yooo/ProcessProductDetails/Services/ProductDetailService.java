@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
 
@@ -22,6 +24,7 @@ public class ProductDetailService {
     public ImageRepo imageRepo;
     public final String className = "TestImg16";  // Replace with your class name
     private SingleWeaviateClient singleWeaviateClient;
+    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
 
     public ProductDetailService(ImageRepo imageRep, SingleWeaviateClient singleWeaviateClient) {
         this.imageRepo = imageRep;
@@ -88,6 +91,7 @@ public class ProductDetailService {
                 payload.setPrice_row((double) map.get("price_row"));
                 payload.setDiscount_row((double) map.get("discount_row"));
                 payload.setSpecial_price_row((double) map.get("special_price_row"));
+                payload.setUpdated_at(LocalDateTime.parse(LocalDateTime.now().format(dateTimeFormatter), dateTimeFormatter));
                 allProductsDetails.add(payload);
 
                 Optional productDetailsOptional = imageRepo.findById(payload.getEntity_id());

@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Entity
@@ -36,6 +38,7 @@ public class KafkaPayload {
     public double discount_row;
     public double special_price_row;
     public String uuid;
+    public LocalDateTime updated_at;
     @Column(name = "base_64_image")
     public String base64Image;
 
