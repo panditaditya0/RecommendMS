@@ -65,7 +65,9 @@ public class PushController {
         for (List<KafkaPayload> aChunk : inputChunk) {
             List<Map<String, Object>> dataObjs = new ArrayList<>();
             for (KafkaPayload kafkaPayload : aChunk) {
-                kafkaPayload.base64Image = productDetailService.downloadAndDownSizeImage(baseUrl + kafkaPayload.image_link);
+                if(null == kafkaPayload.base64Image || kafkaPayload.base64Image.length() < 10){
+                    kafkaPayload.base64Image = productDetailService.downloadAndDownSizeImage(baseUrl + kafkaPayload.image_link);
+                }
                 Optional productDetailsOptional = imageRepo.findById(kafkaPayload.getEntity_id());
 
                 if(!productDetailsOptional.isEmpty()) {
