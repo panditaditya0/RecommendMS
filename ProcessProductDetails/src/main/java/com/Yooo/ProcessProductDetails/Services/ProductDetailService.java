@@ -219,7 +219,8 @@ public class ProductDetailService {
                     .run();
 
             for (ObjectGetResponse b : a.getResult()) {
-                if (!(b.getResult().toString().contains("ObjectsGetResponseAO2Result(errors=null, status=null)"))) {
+                if (!(b.getResult().toString().contains
+                        ("ObjectsGetResponseAO2Result(errors=null, status=null)"))) {
 
                     LOGGER.error("ERROR while bulk import -> " + b.getId());
                     LOGGER.error("ERROR " + b.getResult().toString());

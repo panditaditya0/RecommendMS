@@ -26,28 +26,28 @@ public class KafkaConfig {
     @Autowired
     public ProductDetailService productDetailService;
 
-    @KafkaListener(topics = "testTopic", groupId = "group-008")
-    public void consume1(@Payload List<HashMap<String, Object>> productDetails) {
-        LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
-        productDetailService.processProductDetails(productDetails);
-    }
-
-    @KafkaListener(topics = "testTopic", groupId = "group-008")
-    public void consume2(@Payload List<HashMap<String, Object>> productDetails) {
-        LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
-        productDetailService.processProductDetails(productDetails);
-    }
-
-    @KafkaListener(topics = "testTopic", groupId = "group-008")
-    public void consume3(@Payload List<HashMap<String, Object>> productDetails) {
-        LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
-        productDetailService.processProductDetails(productDetails);
-    }
+//    @KafkaListener(topics = "testTopic", groupId = "group-008")
+//    public void consume1(@Payload List<HashMap<String, Object>> productDetails) {
+//        LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
+//        productDetailService.processProductDetails(productDetails);
+//    }
+//
+//    @KafkaListener(topics = "testTopic", groupId = "group-008")
+//    public void consume2(@Payload List<HashMap<String, Object>> productDetails) {
+//        LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
+//        productDetailService.processProductDetails(productDetails);
+//    }
+//
+//    @KafkaListener(topics = "testTopic", groupId = "group-008")
+//    public void consume3(@Payload List<HashMap<String, Object>> productDetails) {
+//        LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
+//        productDetailService.processProductDetails(productDetails);
+//    }
 
     @Bean
     public Map<String, Object> consumerConfig() {
         Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "164.92.160.25:9072");
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "164.92.160.25:9092");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
