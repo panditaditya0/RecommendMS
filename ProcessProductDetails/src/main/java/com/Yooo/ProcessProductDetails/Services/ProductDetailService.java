@@ -13,6 +13,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -91,7 +98,7 @@ public class ProductDetailService {
 
                 Optional productDetailsOptional = imageRepo.findById(payload.getEntity_id());
                 KafkaPayload finalObject = new KafkaPayload();
-//                aKafkaProductPayload.base64Image = downloadAndDownSizeImage(baseUrl+ productDetails.image_link);
+//                aKafkaProductPayload.base64Image = downloadAndDownSizeImagedownloadAndDownSizeImage(baseUrl+ productDetails.image_link);
                 if (productDetailsOptional.isEmpty()) {
                     finalObject = this.saveImageDetailsToDb(payload);
                 } else {
@@ -223,38 +230,38 @@ public class ProductDetailService {
         }
     }
 
-//    public String downloadAndDownSizeImage(String imageUrl){
-//        try {
-//            URL url = new URL(imageUrl);
-//            HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
-//            int responseCode = httpConn.getResponseCode();
-//            if (responseCode == HttpURLConnection.HTTP_OK) {
-//                InputStream inputStream = httpConn.getInputStream();
-//                BufferedImage originalImage = ImageIO.read(inputStream);
-//                int newWidth = (int) (originalImage.getWidth() * 0.35);
-//                int newHeight = (int) (originalImage.getHeight() * 0.35);
-//                BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, originalImage.getType());
-//                resizedImage.createGraphics().drawImage(originalImage, 0, 0, newWidth, newHeight, null);
-//
-//                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-//                ImageIO.write(resizedImage, "jpg", outputStream);
-//                byte[] imageBytes = outputStream.toByteArray();
-//                String base64Image = Base64.getEncoder().encodeToString(imageBytes);
-//
-//                base64Image.replace("\n", "").replace(" ", "");
-//                inputStream.close();
-//                outputStream.close();
-//
-//                System.out.println("Image downloaded and resized successfully.");
-//                return base64Image;
-//            } else {
-//                System.out.println("Failed to download image. HTTP Error Code: " + responseCode);
-//            }
-//
-//            httpConn.disconnect();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        return "";
-//    }
+    public String downloadAndDownSizeImage(String imageUrl){
+        try {
+            URL url = new URL(imageUrl);
+            HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
+            int responseCode = httpConn.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                InputStream inputStream = httpConn.getInputStream();
+                BufferedImage originalImage = ImageIO.read(inputStream);
+                int newWidth = (int) (originalImage.getWidth() * 0.45);
+                int newHeight = (int) (originalImage.getHeight() * 0.45);
+                BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, originalImage.getType());
+                resizedImage.createGraphics().drawImage(originalImage, 0, 0, newWidth, newHeight, null);
+
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                ImageIO.write(resizedImage, "jpg", outputStream);
+                byte[] imageBytes = outputStream.toByteArray();
+                String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+
+                base64Image.replace("\n", "").replace(" ", "");
+                inputStream.close();
+                outputStream.close();
+
+                System.out.println("Image downloaded and resized successfully.");
+                return base64Image;
+            } else {
+                System.out.println("Failed to download image. HTTP Error Code: " + responseCode);
+            }
+
+            httpConn.disconnect();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
 }

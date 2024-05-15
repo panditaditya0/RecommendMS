@@ -1,5 +1,6 @@
 package com.Yooo.ProcessProductDetails.Controller;
 
+import com.Yooo.ProcessProductDetails.Model.ChildCategoryModel;
 import com.Yooo.ProcessProductDetails.Model.KafkaPayload;
 import com.Yooo.ProcessProductDetails.Repo.ImageRepo;
 import com.Yooo.ProcessProductDetails.Services.ProductDetailService;
@@ -34,7 +35,7 @@ public class PushController {
             {
                 public void run()
                 {
-//                    gg(chunk);
+                    gg(chunk);
                 }
             };
             System.out.println("Strting from thread: " + thread.toString());
@@ -57,44 +58,50 @@ public class PushController {
 //                .body(stream);
 //    }
 
-//    public void gg(List<KafkaPayload> allKafkaPayload) {
-//        String baseUrl = "https://img.perniaspopupshop.com/catalog/product";
-//        LOGGER.info("No of products -> "+ allKafkaPayload.size());
-//        List<List<KafkaPayload>> inputChunk = Lists.partition(allKafkaPayload, 3);
-//        for (List<KafkaPayload> aChunk : inputChunk) {
-//            List<Map<String, Object>> dataObjs = new ArrayList<>();
-//            for (KafkaPayload kafkaPayload : aChunk) {
-//                kafkaPayload.base64Image = productDetailService.downloadAndDownSizeImage(baseUrl + kafkaPayload.image_link);
-//                KafkaPayload finalObject1 = productDetailService.updateProductDetailsToDb(kafkaPayload);
-//
-//                List<String> childCategories = new ArrayList<>();
-//                Iterator it = finalObject1.childCategories.iterator();
-//                while (it.hasNext()) {
-//                    ChildCategoryModel a = (ChildCategoryModel) it.next();
-//                    childCategories.add(a.getLabel());
-//                }
-//
-//                Map<String, Object> properties = new HashMap<>();
-//                properties.put("image", finalObject1.base64Image);
-//                properties.put("entity_id", String.valueOf(finalObject1.entity_id));
-//                properties.put("sku_id", finalObject1.sku_id);
-//                properties.put("product_id", finalObject1.product_id);
-//                properties.put("title", finalObject1.title);
-//                properties.put("discounted_price", finalObject1.discounted_price);
-//                properties.put("region_sale_price", finalObject1.region_sale_price);
-//                properties.put("brand", finalObject1.brand);
-//                properties.put("image_link", baseUrl + finalObject1.image_link);
-//                properties.put("link", finalObject1.link);
-//                properties.put("mad_id", finalObject1.mad_id);
-//                properties.put("sale_price", finalObject1.sale_price);
-//                properties.put("price", finalObject1.price);
-//                properties.put("uuid", finalObject1.uuid.toString());
-//                properties.put("parentCategory", finalObject1.parentCategory);
-//                properties.put("childCategories", childCategories.toArray());
-//                properties.put("color", finalObject1.color);
-//                dataObjs.add(properties);
-//            }
-//            productDetailService.pushToVectorDb(dataObjs);
-//        }
-//    }
+    public void gg(List<KafkaPayload> allKafkaPayload) {
+        String baseUrl = "https://img.perniaspopupshop.com/catalog/product";
+        LOGGER.info("No of products -> "+ allKafkaPayload.size());
+        List<List<KafkaPayload>> inputChunk = Lists.partition(allKafkaPayload, 3);
+        for (List<KafkaPayload> aChunk : inputChunk) {
+            List<Map<String, Object>> dataObjs = new ArrayList<>();
+            for (KafkaPayload kafkaPayload : aChunk) {
+                kafkaPayload.base64Image = productDetailService.downloadAndDownSizeImage(baseUrl + kafkaPayload.image_link);
+                Optional productDetailsOptional = imageRepo.findById(kafkaPayload.getEntity_id());
+
+                if(!productDetailsOptional.isEmpty()) {
+                    KafkaPayload finalObject1 = productDetailService.updateProductDetailsToDb(kafkaPayload, productDetailsOptional);
+
+                    List<String> childCategories = new ArrayList<>();
+                    Iterator it = finalObject1.child_categories.iterator();
+                    while (it.hasNext()) {
+                        ChildCategoryModel a = (ChildCategoryModel) it.next();
+                        childCategories.add(a.getLabel());
+                    }
+
+                    Map<String, Object> properties = new HashMap<>();
+                    properties.put("image", finalObject1.base64Image);
+                    properties.put("entity_id", String.valueOf(finalObject1.entity_id));
+                    properties.put("sku_id", finalObject1.sku_id);
+                    properties.put("product_id", finalObject1.product_id);
+                    properties.put("title", finalObject1.title);
+                    properties.put("discounted_price", finalObject1.discount);
+                    properties.put("region_sale_price", finalObject1.price_in);
+                    properties.put("brand", finalObject1.brand);
+                    properties.put("image_link", baseUrl + finalObject1.image_link);
+                    properties.put("link", finalObject1.link);
+                    properties.put("mad_id", "");
+                    properties.put("sale_price", finalObject1.special_price_in);
+                    properties.put("price", finalObject1.price_in);
+                    properties.put("uuid", finalObject1.uuid.toString());
+                    properties.put("parentCategory", finalObject1.parent_category);
+                    properties.put("childCategories", childCategories.toArray());
+                    properties.put("color", finalObject1.color);
+                    dataObjs.add(properties);
+                } else {
+                    LOGGER.info("No product details found for id " + kafkaPayload.entity_id);
+                }
+            }
+            productDetailService.pushToVectorDb(dataObjs);
+        }
+    }
 }
