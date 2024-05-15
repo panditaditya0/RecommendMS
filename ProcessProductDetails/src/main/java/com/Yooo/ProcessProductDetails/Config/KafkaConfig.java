@@ -18,193 +18,26 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.messaging.handler.annotation.Payload;
+
 import java.util.*;
 
 @Configuration
 public class KafkaConfig {
     public Logger LOGGER = LoggerFactory.getLogger(KafkaConfig.class);
+
     @Autowired
     public ProductDetailService productDetailService;
 
-//    @KafkaListener(topics = "testTopic", groupId = "group-009")
-//    public void consume1(@Payload List<HashMap<String, Object>> productDetails) {
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                LOGGER.info("CONTAINS -> lists ->  "+ productDetails.size());
-//                List<RequestPayload> productDetails2 = new ArrayList<>();
-//                try{
-//                    for (HashMap<String, Object> aProductDetails : productDetails) {
-//                        final ObjectMapper mapper = new ObjectMapper();
-//                        productDetails2.add(mapper.convertValue(aProductDetails, RequestPayload.class));
-//                    }
-//                } catch  (Exception ex ){
-//                    LOGGER.error("ERROR IN KAFKA"+ ex.getStackTrace() + ex.getMessage());
-//                }
-//
-//                productDetailService.processProductDetails(productDetails2);
-//            }
-//        }).start();
-//    }
-//
-//    @KafkaListener(topics = "testTopic", groupId = "group-009")
-//    public void consume2(@Payload List<HashMap<String, Object>> productDetails) {
-//        LOGGER.info("CONTAINS -> lists ->  "+ productDetails.size());
-//        List<RequestPayload> productDetails2 = new ArrayList<>();
-//        try{
-//            for (HashMap<String, Object> aProductDetails : productDetails) {
-//                final ObjectMapper mapper = new ObjectMapper();
-//                productDetails2.add(mapper.convertValue(aProductDetails, RequestPayload.class));
-//            }
-//        } catch  (Exception ex ){
-//            LOGGER.error("ERROR IN KAFKA"+ ex.getStackTrace() + ex.getMessage());
-//        }
-//
-//        productDetailService.processProductDetails(productDetails2);
-//    }
-//
-//    @KafkaListener(topics = "testTopic", groupId = "group-009")
-//    public void consume3(@Payload List<HashMap<String, Object>> productDetails) {
-//        LOGGER.info("CONTAINS -> lists ->  "+ productDetails.size());
-//        List<RequestPayload> productDetails2 = new ArrayList<>();
-//        try{
-//            for (HashMap<String, Object> aProductDetails : productDetails) {
-//                final ObjectMapper mapper = new ObjectMapper();
-//                productDetails2.add(mapper.convertValue(aProductDetails, RequestPayload.class));
-//            }
-//        } catch  (Exception ex ){
-//            LOGGER.error("ERROR IN KAFKA"+ ex.getStackTrace() + ex.getMessage());
-//        }
-//
-//        productDetailService.processProductDetails(productDetails2);
-//    }
-//
-//    @KafkaListener(topics = "testTopic", groupId = "group-009")
-//    public void consume4(@Payload List<HashMap<String, Object>> productDetails) {
-//        LOGGER.info("CONTAINS -> lists ->  "+ productDetails.size());
-//        List<RequestPayload> productDetails2 = new ArrayList<>();
-//        try{
-//            for (HashMap<String, Object> aProductDetails : productDetails) {
-//                final ObjectMapper mapper = new ObjectMapper();
-//                productDetails2.add(mapper.convertValue(aProductDetails, RequestPayload.class));
-//            }
-//        } catch  (Exception ex ){
-//            LOGGER.error("ERROR IN KAFKA"+ ex.getStackTrace() + ex.getMessage());
-//        }
-//
-//        productDetailService.processProductDetails(productDetails2);
-//    }
-
-//    @KafkaListener(topics = "testTopic", groupId = "group-19")
-//    public void consume2(@Payload List<HashMap<String, Object>> productDetails) {
-//        List<RequestPayload> productDetails2 = new ArrayList<>();
-//        try{
-//            for (HashMap<String, Object> aProductDetails : productDetails) {
-//                final ObjectMapper mapper = new ObjectMapper();
-//                productDetails2.add(mapper.convertValue(aProductDetails, RequestPayload.class));
-//            }
-//        } catch  (Exception ex ){
-//            LOGGER.error("ERROR IN KAFKA"+ ex.getStackTrace() + ex.getMessage());
-//        }
-//
-//        productDetailService.processProductDetails(productDetails2);
-//    }
-//
-//    @KafkaListener(topics = "testTopic", groupId = "group-19")
-//    public void consume3(@Payload List<HashMap<String, Object>> productDetails) {
-//        List<RequestPayload> productDetails2 = new ArrayList<>();
-//        try{
-//            for (HashMap<String, Object> aProductDetails : productDetails) {
-//                final ObjectMapper mapper = new ObjectMapper();
-//                productDetails2.add(mapper.convertValue(aProductDetails, RequestPayload.class));
-//            }
-//        } catch  (Exception ex ){
-//            LOGGER.error("ERROR IN KAFKA"+ ex.getStackTrace() + ex.getMessage());
-//        }
-//
-//        productDetailService.processProductDetails(productDetails2);
-//    }
-//
-//    @KafkaListener(topics = "testTopic", groupId = "group-19")
-//    public void consume4(@Payload List<HashMap<String, Object>> productDetails) {
-//        List<RequestPayload> productDetails2 = new ArrayList<>();
-//        try{
-//            for (HashMap<String, Object> aProductDetails : productDetails) {
-//                final ObjectMapper mapper = new ObjectMapper();
-//                productDetails2.add(mapper.convertValue(aProductDetails, RequestPayload.class));
-//            }
-//        } catch  (Exception ex ){
-//            LOGGER.error("ERROR IN KAFKA"+ ex.getStackTrace() + ex.getMessage());
-//        }
-//
-//        productDetailService.processProductDetails(productDetails2);
-//    }
-//    @KafkaListener(topics = "testTopic", groupId = "group-19")
-//    public void consume5(@Payload List<HashMap<String, Object>> productDetails) {
-//        List<RequestPayload> productDetails2 = new ArrayList<>();
-//        try{
-//            for (HashMap<String, Object> aProductDetails : productDetails) {
-//                final ObjectMapper mapper = new ObjectMapper();
-//                productDetails2.add(mapper.convertValue(aProductDetails, RequestPayload.class));
-//            }
-//        } catch  (Exception ex ){
-//            LOGGER.error("ERROR IN KAFKA"+ ex.getStackTrace() + ex.getMessage());
-//        }
-//
-//        productDetailService.processProductDetails(productDetails2);
-//    }
-//
-//
-//    @KafkaListener(topics = "testTopic", groupId = "group-19")
-//    public void consume6(@Payload List<HashMap<String, Object>> productDetails) {
-//        List<RequestPayload> productDetails2 = new ArrayList<>();
-//        try{
-//            for (HashMap<String, Object> aProductDetails : productDetails) {
-//                final ObjectMapper mapper = new ObjectMapper();
-//                productDetails2.add(mapper.convertValue(aProductDetails, RequestPayload.class));
-//            }
-//        } catch  (Exception ex ){
-//            LOGGER.error("ERROR IN KAFKA"+ ex.getStackTrace() + ex.getMessage());
-//        }
-//
-//        productDetailService.processProductDetails(productDetails2);
-//    }
-//
-//
-//    @KafkaListener(topics = "testTopic", groupId = "group-19")
-//    public void consume7(@Payload List<HashMap<String, Object>> productDetails) {
-//        List<RequestPayload> productDetails2 = new ArrayList<>();
-//        try{
-//            for (HashMap<String, Object> aProductDetails : productDetails) {
-//                final ObjectMapper mapper = new ObjectMapper();
-//                productDetails2.add(mapper.convertValue(aProductDetails, RequestPayload.class));
-//            }
-//        } catch  (Exception ex ){
-//            LOGGER.error("ERROR IN KAFKA"+ ex.getStackTrace() + ex.getMessage());
-//        }
-//
-//        productDetailService.processProductDetails(productDetails2);
-//    }
-//
-//    @KafkaListener(topics = "testTopic", groupId = "group-19")
-//    public void consume8(@Payload List<HashMap<String, Object>> productDetails) {
-//        List<RequestPayload> productDetails2 = new ArrayList<>();
-//        try{
-//            for (HashMap<String, Object> aProductDetails : productDetails) {
-//                final ObjectMapper mapper = new ObjectMapper();
-//                productDetails2.add(mapper.convertValue(aProductDetails, RequestPayload.class));
-//            }
-//        } catch  (Exception ex ){
-//            LOGGER.error("ERROR IN KAFKA"+ ex.getStackTrace() + ex.getMessage());
-//        }
-//
-//        productDetailService.processProductDetails(productDetails2);
-//    }
+    @KafkaListener(topics = "testTopic", groupId = "group-009")
+    public void consume1(@Payload List<HashMap<String, Object>> productDetails) {
+        LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
+        productDetailService.processProductDetails(productDetails);
+    }
 
     @Bean
     public Map<String, Object> consumerConfig(){
         Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "164.92.160.25:9092");
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "164.92.160.25:9072");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");

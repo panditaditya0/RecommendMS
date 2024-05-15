@@ -10,22 +10,25 @@ import java.util.ArrayList;
 @Setter
 @ToString
 public class RequestPayload {
-    public long entity_id;
     public String sku_id;
     public String product_id;
     public String title;
-    public double discounted_price;
-    public double region_sale_price;
     public String brand;
     public String image_link;
-    public double discount;
+    public float discount;
     public String link;
-    public String mad_id;
-    public double sale_price;
-    public String ontology;
-    public double price;
-    public String uuid;
+    public String entity_id;
     public String color;
     public String domain;
-    public ArrayList<CategoryModel> category;
+    public String parent_category;
+    public ArrayList<String> child_categories;
+    public float price_in;
+    public float discount_in;
+    public float special_price_in;
+    public float price_us;
+    public float discount_us;
+    public float special_price_us;
+    public float price_row;
+    public float discount_row;
+    public float special_price_row;
 }
