@@ -1,8 +1,6 @@
 package com.Yooo.ProcessProductDetails.Config;
 
-import com.Yooo.ProcessProductDetails.Model.RequestPayload;
 import com.Yooo.ProcessProductDetails.Services.ProductDetailService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
@@ -28,14 +26,26 @@ public class KafkaConfig {
     @Autowired
     public ProductDetailService productDetailService;
 
-    @KafkaListener(topics = "testTopic", groupId = "group-009")
+    @KafkaListener(topics = "testTopic", groupId = "group-008")
     public void consume1(@Payload List<HashMap<String, Object>> productDetails) {
         LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
         productDetailService.processProductDetails(productDetails);
     }
 
+    @KafkaListener(topics = "testTopic", groupId = "group-008")
+    public void consume2(@Payload List<HashMap<String, Object>> productDetails) {
+        LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
+        productDetailService.processProductDetails(productDetails);
+    }
+
+    @KafkaListener(topics = "testTopic", groupId = "group-008")
+    public void consume3(@Payload List<HashMap<String, Object>> productDetails) {
+        LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
+        productDetailService.processProductDetails(productDetails);
+    }
+
     @Bean
-    public Map<String, Object> consumerConfig(){
+    public Map<String, Object> consumerConfig() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "164.92.160.25:9072");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
@@ -43,11 +53,11 @@ public class KafkaConfig {
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-        return  props;
+        return props;
     }
 
     @Bean
-    public ConsumerFactory<String, Object> consumerFactory(){
+    public ConsumerFactory<String, Object> consumerFactory() {
         return new DefaultKafkaConsumerFactory<>(consumerConfig());
     }
 

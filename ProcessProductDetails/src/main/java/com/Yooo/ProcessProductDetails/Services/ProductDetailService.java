@@ -31,20 +31,14 @@ public class ProductDetailService {
         this.singleWeaviateClient = singleWeaviateClient;
     }
 
-    public KafkaPayload updateProductDetailsToDb(KafkaPayload productDetails) {
+    public KafkaPayload updateProductDetailsToDb(KafkaPayload newData, Optional oldData) {
         try {
-            Optional op = imageRepo.findById(productDetails.getEntity_id());
-            if (op.isPresent()) {
-                KafkaPayload productDetailsFromSb = (KafkaPayload) op.get();
-                productDetails.setUuid(productDetailsFromSb.getUuid());
-            } else {
-                LOGGER.error("ERROR UPDATING " + productDetails.getEntity_id());
-            }
+            KafkaPayload productDetailsFromSb = (KafkaPayload) oldData.get();
+            newData.setUuid(productDetailsFromSb.getUuid());
         } catch (Exception ex) {
-            LOGGER.error("ERROR UPDATING " + productDetails.getEntity_id());
+           throw new RuntimeException("Error updating product details"+newData.entity_id+" " + ex.getMessage());
         }
-//        LOGGER.info("UPDATED IN DB "+ productDetails.getEntity_id());
-        return imageRepo.save(productDetails);
+        return imageRepo.save(newData);
     }
 
     private KafkaPayload saveImageDetailsToDb(KafkaPayload productDetails) {
@@ -92,6 +86,7 @@ public class ProductDetailService {
                 payload.setDiscount_row((double) map.get("discount_row"));
                 payload.setSpecial_price_row((double) map.get("special_price_row"));
                 payload.setUpdated_at(LocalDateTime.parse(LocalDateTime.now().format(dateTimeFormatter), dateTimeFormatter));
+                payload.setChild_categories(child_categories);
                 allProductsDetails.add(payload);
 
                 Optional productDetailsOptional = imageRepo.findById(payload.getEntity_id());
@@ -100,7 +95,7 @@ public class ProductDetailService {
                 if (productDetailsOptional.isEmpty()) {
                     finalObject = this.saveImageDetailsToDb(payload);
                 } else {
-                    finalObject = this.updateProductDetailsToDb((KafkaPayload) productDetailsOptional.get());
+                    finalObject = this.updateProductDetailsToDb(payload, productDetailsOptional);
                 }
             }
         } catch (Exception ex) {
