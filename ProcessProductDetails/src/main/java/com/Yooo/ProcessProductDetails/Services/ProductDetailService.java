@@ -63,12 +63,14 @@ public class ProductDetailService {
         ArrayList<KafkaPayload> allProductsDetails = new ArrayList<>();
         try {
             for (HashMap<String, Object> map : allProductDetails) {
+                KafkaPayload fromDbOptional= imageRepo.findById(Long.parseLong((String) map.get("entity_id"))).get();
+
                 ArrayList<String> child = (ArrayList<String>) map.get("child_categories");
                 Set<ChildCategoryModel> child_categories = new HashSet<>();
                 KafkaPayload payload = new KafkaPayload();
                 for (String category : child) {
                     ChildCategoryModel aChildModel = new ChildCategoryModel();
-                    aChildModel.setId(Long.parseLong((String) map.get("entity_id")));
+                    aChildModel.setKafka_entity_id(Long.parseLong((String) map.get("entity_id")));
                     aChildModel.setLabel(category);
                     child_categories.add(aChildModel);
                 }
@@ -94,6 +96,7 @@ public class ProductDetailService {
                 payload.setSpecial_price_row((double) map.get("special_price_row"));
                 payload.setUpdated_at(LocalDateTime.parse(LocalDateTime.now().format(dateTimeFormatter), dateTimeFormatter));
                 payload.setChild_categories(child_categories);
+                payload.setBase64Image(fromDbOptional.base64Image);
                 allProductsDetails.add(payload);
 
                 Optional productDetailsOptional = imageRepo.findById(payload.getEntity_id());
@@ -108,9 +111,6 @@ public class ProductDetailService {
         } catch (Exception ex) {
             LOGGER.error("ERROR Converting " + ex.getMessage());
         }
-
-
-
 
 //        List<Map<String, Object>> dataObjs = new ArrayList<>();
 //        List<RequestPayload> newAllProductDetails = allProductDetails.stream()
