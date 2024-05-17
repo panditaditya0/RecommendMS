@@ -11,7 +11,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @RestController
 public class PushController {
@@ -43,20 +49,87 @@ public class PushController {
             th.setDaemon(true);
             th.run();
         }
+
          return ResponseEntity.ok().build();
     }
 
+    @CrossOrigin
+    @GetMapping("/crawler")
+    public ResponseEntity pushToWeaviate(){
+        ArrayList<String> allKafkaPayload = imageRepo.listOfSkuId();
 
-    //As the others mentioned, it's will work. ExecutorService can do the job. Here you can see I used it for starting a video stream that sits on a separate endpoint.
+        List<List<String>> sublists = divideList(allKafkaPayload, 10);
+        ExecutorService executor = Executors.newFixedThreadPool(10);
+        for (List<String> sublist : sublists) {
+            executor.submit(() -> makeApiCalls(sublist));
+        }
+        executor.shutdown();
 
-//    @PostMapping("/capture")
-//    public ResponseEntity capture() {
-//        // some code omitted
-//        ExecutorService service=Executors.newCachedThreadPool();
-//        service.submit(() ->   gg(a););
-//        return return ResponseEntity.ok()
-//                .body(stream);
-//    }
+        return ResponseEntity.ok().build();
+    }
+
+    @CrossOrigin
+    @GetMapping("/pushAll")
+    public ResponseEntity pushAll() {
+        ArrayList<KafkaPayload> allKafkaPayload = imageRepo.listOfAllProducts();
+        int chunkCount = allKafkaPayload.size() / 5;
+        List<List<KafkaPayload>> chunks = Lists.partition(allKafkaPayload, chunkCount);
+
+        ExecutorService executor = Executors.newFixedThreadPool(5);
+        for (List<KafkaPayload> sublist : chunks) {
+            executor.submit(() -> gg(sublist));
+        }
+        executor.shutdown();
+
+        return ResponseEntity.ok().build();
+    }
+
+    private static List<List<String>> divideList(ArrayList<String> list, int numParts) {
+        List<List<String>> sublists = new ArrayList<>();
+        int chunkSize = (int) Math.ceil((double) list.size() / numParts);
+
+        for (int i = 0; i < list.size(); i += chunkSize) {
+            sublists.add(new ArrayList<>(list.subList(i, Math.min(list.size(), i + chunkSize))));
+        }
+
+        return sublists;
+    }
+
+    private static void makeApiCalls(List<String> skuIds) {
+        HttpClient client = HttpClient.newHttpClient();
+
+        for (String skuId : skuIds) {
+            try {
+                long startTime = System.nanoTime();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(new URI("http://164.92.160.25:7074/fetch"))
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(
+                                "{\n" +
+                                        "    \"exchange_rate\": \"\",\n" +
+                                        "    \"filters\": {\n" +
+                                        "        \"brand\" : \"\",\n" +
+                                        "        \"operands\": \"\"\n" +
+                                        "    },\n" +
+                                        "    \"sku_id\" : \"" + skuId + "\",\n" +
+                                        "    \"region\" : \"\",\n" +
+                                        "    \"product_id\" : \"\"\n" +
+                                        "}"))
+                        .build();
+
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                long endTime = System.nanoTime();
+                long executionTime = endTime - startTime;
+                if (response.statusCode() == 302 && response.body().contains("sku_id")) {
+                    System.out.println("OK -> " + executionTime/1000000000 + "sec");
+                }
+//                System.out.println("STATUS: " + response.statusCode());
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     public void gg(List<KafkaPayload> allKafkaPayload) {
         String baseUrl = "https://img.perniaspopupshop.com/catalog/product";
@@ -107,3 +180,4 @@ public class PushController {
         }
     }
 }
+

@@ -74,6 +74,14 @@ public class ProductDetailService {
                     aChildModel.setLabel(category);
                     child_categories.add(aChildModel);
                 }
+
+                for(ChildCategoryModel a :child_categories){
+                    if(a.kafka_entity_id==0 || a.kafka_entity_id <2){
+                        System.out.println("why");
+                    }else{
+                        System.out.println("OK -> "+ a.kafka_entity_id);
+                    }
+                }
                 payload.setEntity_id(Long.parseLong((String) map.get("entity_id")));
                 payload.setSku_id((String) map.get("sku_id"));
                 payload.setProduct_id((String) map.get("product_id"));
@@ -220,7 +228,7 @@ public class ProductDetailService {
 
             for (ObjectGetResponse b : a.getResult()) {
                 if (!(b.getResult().toString().contains
-                        ("ObjectsGetResponseAO2Result(errors=null, status=null)"))) {
+                        ("SUCCESS"))) {
 
                     LOGGER.error("ERROR while bulk import -> " + b.getId());
                     LOGGER.error("ERROR " + b.getResult().toString());
