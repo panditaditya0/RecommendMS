@@ -93,20 +93,11 @@ public class PushController {
     @GetMapping("/push/allImages")
     public ResponseEntity pushAllImages(){
         List<String> allSkuIds = imageRepo.listOfAllSkuIds();
-        List<List<String>> chunks = Lists.partition(allSkuIds, 4);
-        ExecutorService executor = Executors.newFixedThreadPool(4);
+        List<List<String>> chunks = Lists.partition(allSkuIds, 3);
         for (List<String> sublist : chunks) {
-            executor.submit(() ->{
-                    ArrayList<KafkaPayload> listOfKafkaProducts = imageRepo.getListOfProducts(sublist);
-                    gg(listOfKafkaProducts);
-                    chunks.remove(listOfKafkaProducts);
-                    System.gc();
-
-            });
+            ArrayList<KafkaPayload> listOfKafkaProducts = imageRepo.getListOfProducts(sublist);
+            gg(listOfKafkaProducts);
         }
-        executor.shutdown();
-
-
         return ResponseEntity.ok().build();
     }
 
