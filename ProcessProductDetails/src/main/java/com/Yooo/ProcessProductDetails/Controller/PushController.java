@@ -8,6 +8,7 @@ import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,14 +30,18 @@ public class PushController {
     @Autowired
     public ProductDetailService productDetailService;
 
+    @Autowired
+    private RedisTemplate template;
+
     @CrossOrigin
-    @PostMapping("/push/{brand}")
-    public ResponseEntity pushToWeaviate(@PathVariable String brand){
-        List<KafkaPayload> allKafkaPayload = imageRepo.findByBrand(brand);
+    @PostMapping("/push/{value}")
+    public ResponseEntity pushToWeaviate(@PathVariable String value){
+        List<KafkaPayload> allKafkaPayload = imageRepo.findByBrand( value);
         int chunkCount =   allKafkaPayload.size()/4;
         List<List<KafkaPayload>> chunks = Lists.partition(allKafkaPayload, chunkCount);
 
         for (List<KafkaPayload> chunk : chunks) {
+//            gg(chunk);
             Runnable thread = new Runnable()
             {
                 public void run()
@@ -54,12 +59,12 @@ public class PushController {
     }
 
     @CrossOrigin
-    @GetMapping("/crawler")
-    public ResponseEntity pushToWeaviate(){
-        ArrayList<String> allKafkaPayload = imageRepo.listOfSkuId();
+    @GetMapping("/crawler/{key}/{value}")
+    public ResponseEntity crawler(@PathVariable String key, @PathVariable String value){
+        ArrayList<String> allKafkaPayload = imageRepo.listOfSkuId(value);
 
-        List<List<String>> sublists = divideList(allKafkaPayload, 10);
-        ExecutorService executor = Executors.newFixedThreadPool(10);
+        List<List<String>> sublists = divideList(allKafkaPayload, 30);
+        ExecutorService executor = Executors.newFixedThreadPool(30);
         for (List<String> sublist : sublists) {
             executor.submit(() -> makeApiCalls(sublist));
         }
@@ -70,7 +75,7 @@ public class PushController {
 
     @CrossOrigin
     @GetMapping("/pushAll")
-    public ResponseEntity pushAll() {
+    public ResponseEntity pushAll(@PathVariable String key) {
         ArrayList<KafkaPayload> allKafkaPayload = imageRepo.listOfAllProducts();
         int chunkCount = allKafkaPayload.size() / 5;
         List<List<KafkaPayload>> chunks = Lists.partition(allKafkaPayload, chunkCount);
@@ -80,6 +85,27 @@ public class PushController {
             executor.submit(() -> gg(sublist));
         }
         executor.shutdown();
+
+        return ResponseEntity.ok().build();
+    }
+
+    @CrossOrigin
+    @GetMapping("/push/allImages")
+    public ResponseEntity pushAllImages(){
+        List<String> allSkuIds = imageRepo.listOfAllSkuIds();
+        List<List<String>> chunks = Lists.partition(allSkuIds, 4);
+        ExecutorService executor = Executors.newFixedThreadPool(4);
+        for (List<String> sublist : chunks) {
+            executor.submit(() ->{
+                    ArrayList<KafkaPayload> listOfKafkaProducts = imageRepo.getListOfProducts(sublist);
+                    gg(listOfKafkaProducts);
+                    chunks.remove(listOfKafkaProducts);
+                    System.gc();
+
+            });
+        }
+        executor.shutdown();
+
 
         return ResponseEntity.ok().build();
     }
@@ -94,33 +120,48 @@ public class PushController {
 
         return sublists;
     }
+    private LinkedHashSet<String> getSkus(String key){
+        Object listOfSkus = template.opsForList().range(key+"YES", 0, -1);
+        LinkedHashSet<String> listOfSkuIdsFromRedis = new LinkedHashSet<>();
+        listOfSkuIdsFromRedis.addAll((ArrayList<String>) listOfSkus);
+        return listOfSkuIdsFromRedis;
+    }
 
-    private static void makeApiCalls(List<String> skuIds) {
+    private void makeApiCalls(final List<String> skuIds) {
         HttpClient client = HttpClient.newHttpClient();
-
         for (String skuId : skuIds) {
             try {
-                long startTime = System.nanoTime();
+                if(getSkus(skuId).size() > 0){
+                    continue;
+                }
+
+                    long startTime = System.nanoTime();
                 HttpRequest request = HttpRequest.newBuilder()
-                        .uri(new URI("http://164.92.160.25:7074/fetch"))
+//                        .uri(new URI("http://164.92.160.25:7074/fetch"))
+                        .uri(new URI("http://localhost:8080/fetch"))
                         .header("Content-Type", "application/json")
-                        .POST(HttpRequest.BodyPublishers.ofString(
-                                "{\n" +
-                                        "    \"exchange_rate\": \"\",\n" +
-                                        "    \"filters\": {\n" +
-                                        "        \"brand\" : \"\",\n" +
-                                        "        \"operands\": \"\"\n" +
-                                        "    },\n" +
-                                        "    \"sku_id\" : \"" + skuId + "\",\n" +
-                                        "    \"region\" : \"\",\n" +
-                                        "    \"product_id\" : \"\"\n" +
-                                        "}"))
+                        .POST(HttpRequest.BodyPublishers.ofString("{\"num_results\":[15],\"sku_id\":\""+skuId+"\" ,\"widget_list\":[0],\"mad_uuid\":\"i_am_a_bot\",\"user_id\":\"\",\"product_id\":\"seema-gujral-ivory-sequins-embroidered-lehenga-set-segc22102\",\"details\":true,\"fields\":[\"brand\",\"sku_id\",\"region_sale_price\",\"discount_label\",\"discount\"],\"extra_params\":{\"exchange_rate\":1},\"region\":\"ind\",\"filters\":[{\"field\":\"brand\",\"value\":[\"Seema \"]}]}"))
+                        .build();
+
+                HttpRequest request2 = HttpRequest.newBuilder()
+                        .uri(new URI("http://164.92.160.25:7074/fetch"))
+//                        .uri(new URI("http://localhost:8080/fetch"))
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString("{\"num_results\":[15],\"sku_id\":\""+skuId+"\" ,\"widget_list\":[0],\"mad_uuid\":\"i_am_a_bot\",\"user_id\":\"\",\"product_id\":\"seema-gujral-ivory-sequins-embroidered-lehenga-set-segc22102\",\"details\":true,\"fields\":[\"brand\",\"sku_id\",\"region_sale_price\",\"discount_label\",\"discount\"],\"extra_params\":{\"exchange_rate\":1},\"region\":\"ind\",\"filters\":[{\"field\":\"brand\",\"value\":[\"Seema \"]}]}"))
+                        .build();
+
+
+                HttpRequest request3 = HttpRequest.newBuilder()
+                        .uri(new URI("http://164.92.160.25:7074/fetch"))
+//                        .uri(new URI("http://localhost:8080/fetch"))
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString("{\"num_results\":[15],\"sku_id\":\""+skuId+"\" ,\"widget_list\":[0],\"mad_uuid\":\"i_am_a_bot\",\"user_id\":\"\",\"product_id\":\"seema-gujral-ivory-sequins-embroidered-lehenga-set-segc22102\",\"details\":true,\"fields\":[\"brand\",\"sku_id\",\"region_sale_price\",\"discount_label\",\"discount\"],\"extra_params\":{\"exchange_rate\":1},\"region\":\"ind\",\"filters\":[{\"field\":\"brand\",\"value\":[\"Seema \"]}]}"))
                         .build();
 
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 long endTime = System.nanoTime();
                 long executionTime = endTime - startTime;
-                if (response.statusCode() == 302 && response.body().contains("sku_id")) {
+                if (response.statusCode() == 200 && response.body().contains("sku_id")) {
                     System.out.println("OK -> " + executionTime/1000000000 + "sec");
                 }
 //                System.out.println("STATUS: " + response.statusCode());
@@ -129,12 +170,15 @@ public class PushController {
                 e.printStackTrace();
             }
         }
+        System.out.println("Completed");
     }
 
     public void gg(List<KafkaPayload> allKafkaPayload) {
         String baseUrl = "https://img.perniaspopupshop.com/catalog/product";
         LOGGER.info("No of products -> "+ allKafkaPayload.size());
         List<List<KafkaPayload>> inputChunk = Lists.partition(allKafkaPayload, 3);
+        allKafkaPayload = null;
+        System.gc();
         for (List<KafkaPayload> aChunk : inputChunk) {
             List<Map<String, Object>> dataObjs = new ArrayList<>();
             for (KafkaPayload kafkaPayload : aChunk) {
