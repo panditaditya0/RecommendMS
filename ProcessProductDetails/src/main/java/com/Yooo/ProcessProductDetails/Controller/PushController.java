@@ -36,7 +36,7 @@ public class PushController {
     @CrossOrigin
     @GetMapping("/push/{value}")
     public ResponseEntity pushToWeaviate(@PathVariable String value) {
-        List<String> allSkuIds = imageRepo.findByParent(value);
+        ArrayList<String> allSkuIds = imageRepo.findByParent(value);
         List<List<String>> chunks = Lists.partition(allSkuIds, 3);
         ExecutorService executor = Executors.newFixedThreadPool(1);
         executor.submit(() -> {
