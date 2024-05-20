@@ -286,9 +286,10 @@ public class ProductDetailService {
         List<Map<String, Object>> dataObjs = new ArrayList<>();
 
         for (KafkaPayload kafkaPayload : allKafkaPayload) {
-//            if (kafkaPayload.base64Image == null || kafkaPayload.base64Image.length() < 10) {
+            if (kafkaPayload.base64Image == null || kafkaPayload.base64Image.length() < 10) {
                 kafkaPayload.base64Image = this.downloadAndDownSizeImage(baseUrl + kafkaPayload.image_link);
-//            }
+                continue;
+            }
 
             Optional productDetailsOptional = imageRepo.findById(kafkaPayload.getEntity_id());
             if (productDetailsOptional.isPresent()) {
@@ -314,7 +315,9 @@ public class ProductDetailService {
                 LOGGER.info("No product details found for id " + kafkaPayload.entity_id);
             }
         }
-        this.pushToVectorDb(dataObjs);
+        if(dataObjs.size() > 0){
+            this.pushToVectorDb(dataObjs);
+        }
     }
 
 }
