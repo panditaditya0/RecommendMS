@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -239,7 +240,7 @@ public class ProductDetailService {
         }
     }
 
-    public String downloadAndDownSizeImage(String imageUrl){
+    public String downloadAndDownSizeImage(String imageUrl) {
         try {
             URL url = new URL(imageUrl);
             HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
@@ -250,18 +251,26 @@ public class ProductDetailService {
                 int newWidth = (int) (originalImage.getWidth() * 0.45);
                 int newHeight = (int) (originalImage.getHeight() * 0.45);
                 BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, originalImage.getType());
-                resizedImage.createGraphics().drawImage(originalImage, 0, 0, newWidth, newHeight, null);
+                Graphics2D g = resizedImage.createGraphics();
+                g.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
+                g.dispose();
+
+                // Convert the resized image to grayscale
+                BufferedImage grayImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_BYTE_GRAY);
+                Graphics2D g2d = grayImage.createGraphics();
+                g2d.drawImage(resizedImage, 0, 0, null);
+                g2d.dispose();
 
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                ImageIO.write(resizedImage, "jpg", outputStream);
+                ImageIO.write(grayImage, "jpg", outputStream);
                 byte[] imageBytes = outputStream.toByteArray();
                 String base64Image = Base64.getEncoder().encodeToString(imageBytes);
 
-                base64Image.replace("\n", "").replace(" ", "");
+                base64Image = base64Image.replace("\n", "").replace(" ", "");
                 inputStream.close();
                 outputStream.close();
 
-                System.out.println("Image downloaded and resized successfully.");
+                System.out.println("Image downloaded, resized, and converted to grayscale successfully.");
                 return base64Image;
             } else {
                 System.out.println("Failed to download image. HTTP Error Code: " + responseCode);
@@ -272,5 +281,51 @@ public class ProductDetailService {
             e.printStackTrace();
         }
         return "";
+    }
+
+    public void gg(final List<KafkaPayload> allKafkaPayload) {
+        String baseUrl = "https://img.perniaspopupshop.com/catalog/product";
+        LOGGER.info("No of products -> "+ allKafkaPayload.size());
+        List<Map<String, Object>> dataObjs = new ArrayList<>();
+        for (KafkaPayload kafkaPayload : allKafkaPayload) {
+            if(null == kafkaPayload.base64Image || kafkaPayload.base64Image.length() < 10){
+                kafkaPayload.base64Image = this.downloadAndDownSizeImage(baseUrl + kafkaPayload.image_link);
+            }
+            Optional productDetailsOptional = imageRepo.findById(kafkaPayload.getEntity_id());
+
+            if(!productDetailsOptional.isEmpty()) {
+                KafkaPayload finalObject1 = this.updateProductDetailsToDb(kafkaPayload, productDetailsOptional);
+
+                List<String> childCategories = new ArrayList<>();
+                Iterator it = finalObject1.child_categories.iterator();
+                while (it.hasNext()) {
+                    ChildCategoryModel a = (ChildCategoryModel) it.next();
+                    childCategories.add(a.getLabel());
+                }
+
+                Map<String, Object> properties = new HashMap<>();
+                properties.put("image", finalObject1.base64Image);
+//                    properties.put("entity_id", String.valueOf(finalObject1.entity_id));
+                properties.put("sku_id", finalObject1.sku_id);
+                properties.put("product_id", finalObject1.product_id);
+//                    properties.put("title", finalObject1.title);
+//                    properties.put("discounted_price", finalObject1.discount);
+//                    properties.put("region_sale_price", finalObject1.price_in);
+                properties.put("brand", finalObject1.brand);
+//                    properties.put("image_link", baseUrl + finalObject1.image_link);
+//                    properties.put("link", finalObject1.link);
+//                    properties.put("mad_id", "");
+//                    properties.put("sale_price", finalObject1.special_price_in);
+//                    properties.put("price", finalObject1.price_in);
+                properties.put("uuid", finalObject1.uuid.toString());
+                properties.put("parentCategory", finalObject1.parent_category);
+                properties.put("childCategories", childCategories.toArray());
+                properties.put("color", finalObject1.color);
+                dataObjs.add(properties);
+            } else {
+                LOGGER.info("No product details found for id " + kafkaPayload.entity_id);
+            }
+        }
+        this.pushToVectorDb(dataObjs);
     }
 }

@@ -34,28 +34,19 @@ public class PushController {
     private RedisTemplate template;
 
     @CrossOrigin
-    @PostMapping("/push/{value}")
-    public ResponseEntity pushToWeaviate(@PathVariable String value){
-        List<KafkaPayload> allKafkaPayload = imageRepo.findByBrand( value);
-        int chunkCount =   allKafkaPayload.size()/4;
-        List<List<KafkaPayload>> chunks = Lists.partition(allKafkaPayload, chunkCount);
+    @GetMapping("/push/{value}")
+    public ResponseEntity pushToWeaviate(@PathVariable String value) {
+        List<String> allSkuIds = imageRepo.findByParent(value);
+        List<List<String>> chunks = Lists.partition(allSkuIds, 3);
+        ExecutorService executor = Executors.newFixedThreadPool(1);
+        executor.submit(() -> {
+            for (List<String> sublist : chunks) {
+                ArrayList<KafkaPayload> listOfKafkaProducts = imageRepo.getListOfProducts(sublist);
+                productDetailService.gg(listOfKafkaProducts);
+            }
+        });
 
-        for (List<KafkaPayload> chunk : chunks) {
-//            gg(chunk);
-            Runnable thread = new Runnable()
-            {
-                public void run()
-                {
-                    gg(chunk);
-                }
-            };
-            System.out.println("Strting from thread: " + thread.toString());
-            Thread th=   new Thread(thread);
-            th.setDaemon(true);
-            th.run();
-        }
-
-         return ResponseEntity.ok().build();
+        return ResponseEntity.ok("Products -> " + allSkuIds.size());
     }
 
     @CrossOrigin
@@ -75,17 +66,13 @@ public class PushController {
 
     @CrossOrigin
     @GetMapping("/pushAll")
-    public ResponseEntity pushAll(@PathVariable String key) {
-        ArrayList<KafkaPayload> allKafkaPayload = imageRepo.listOfAllProducts();
-        int chunkCount = allKafkaPayload.size() / 5;
-        List<List<KafkaPayload>> chunks = Lists.partition(allKafkaPayload, chunkCount);
-
-        ExecutorService executor = Executors.newFixedThreadPool(5);
-        for (List<KafkaPayload> sublist : chunks) {
-            executor.submit(() -> gg(sublist));
+    public ResponseEntity pushAll() {
+        List<String> allSkuIds = imageRepo.listOfAllSkuIds();
+        List<List<String>> chunks = Lists.partition(allSkuIds, 3);
+        for (List<String> sublist : chunks) {
+            ArrayList<KafkaPayload> listOfKafkaProducts = imageRepo.getListOfProducts(sublist);
+            productDetailService.gg(listOfKafkaProducts);
         }
-        executor.shutdown();
-
         return ResponseEntity.ok().build();
     }
 
@@ -96,7 +83,7 @@ public class PushController {
         List<List<String>> chunks = Lists.partition(allSkuIds, 3);
         for (List<String> sublist : chunks) {
             ArrayList<KafkaPayload> listOfKafkaProducts = imageRepo.getListOfProducts(sublist);
-            gg(listOfKafkaProducts);
+            productDetailService.gg(listOfKafkaProducts);
         }
         return ResponseEntity.ok().build();
     }
@@ -162,57 +149,6 @@ public class PushController {
             }
         }
         System.out.println("Completed");
-    }
-
-    public void gg(List<KafkaPayload> allKafkaPayload) {
-        String baseUrl = "https://img.perniaspopupshop.com/catalog/product";
-        LOGGER.info("No of products -> "+ allKafkaPayload.size());
-        List<List<KafkaPayload>> inputChunk = Lists.partition(allKafkaPayload, 3);
-        allKafkaPayload = null;
-        System.gc();
-        for (List<KafkaPayload> aChunk : inputChunk) {
-            List<Map<String, Object>> dataObjs = new ArrayList<>();
-            for (KafkaPayload kafkaPayload : aChunk) {
-                if(null == kafkaPayload.base64Image || kafkaPayload.base64Image.length() < 10){
-                    kafkaPayload.base64Image = productDetailService.downloadAndDownSizeImage(baseUrl + kafkaPayload.image_link);
-                }
-                Optional productDetailsOptional = imageRepo.findById(kafkaPayload.getEntity_id());
-
-                if(!productDetailsOptional.isEmpty()) {
-                    KafkaPayload finalObject1 = productDetailService.updateProductDetailsToDb(kafkaPayload, productDetailsOptional);
-
-                    List<String> childCategories = new ArrayList<>();
-                    Iterator it = finalObject1.child_categories.iterator();
-                    while (it.hasNext()) {
-                        ChildCategoryModel a = (ChildCategoryModel) it.next();
-                        childCategories.add(a.getLabel());
-                    }
-
-                    Map<String, Object> properties = new HashMap<>();
-                    properties.put("image", finalObject1.base64Image);
-                    properties.put("entity_id", String.valueOf(finalObject1.entity_id));
-                    properties.put("sku_id", finalObject1.sku_id);
-                    properties.put("product_id", finalObject1.product_id);
-                    properties.put("title", finalObject1.title);
-                    properties.put("discounted_price", finalObject1.discount);
-                    properties.put("region_sale_price", finalObject1.price_in);
-                    properties.put("brand", finalObject1.brand);
-                    properties.put("image_link", baseUrl + finalObject1.image_link);
-                    properties.put("link", finalObject1.link);
-                    properties.put("mad_id", "");
-                    properties.put("sale_price", finalObject1.special_price_in);
-                    properties.put("price", finalObject1.price_in);
-                    properties.put("uuid", finalObject1.uuid.toString());
-                    properties.put("parentCategory", finalObject1.parent_category);
-                    properties.put("childCategories", childCategories.toArray());
-                    properties.put("color", finalObject1.color);
-                    dataObjs.add(properties);
-                } else {
-                    LOGGER.info("No product details found for id " + kafkaPayload.entity_id);
-                }
-            }
-            productDetailService.pushToVectorDb(dataObjs);
-        }
     }
 }
 
