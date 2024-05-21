@@ -241,9 +241,10 @@ public class ProductDetailService {
     }
 
     public String downloadAndDownSizeImage(String imageUrl) {
+        HttpURLConnection httpConn=null;
         try {
             URL url = new URL(imageUrl);
-            HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
+             httpConn = (HttpURLConnection) url.openConnection();
             int responseCode = httpConn.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 try (InputStream inputStream = httpConn.getInputStream();
@@ -264,7 +265,10 @@ public class ProductDetailService {
                     g2d.dispose();
 
                     ImageIO.write(resizedImage, "jpg", outputStream);
+                    outputStream.flush();
                     byte[] imageBytes = outputStream.toByteArray();
+                    outputStream.close();
+
                     String base64Image = Base64.getEncoder().encodeToString(imageBytes).replace("\n", "").replace(" ", "");
 
                     System.out.println("Image downloaded, resized, and converted to grayscale successfully.");
@@ -273,9 +277,13 @@ public class ProductDetailService {
             } else {
                 System.out.println("Failed to download image. HTTP Error Code: " + responseCode);
             }
-            httpConn.disconnect();
+
         } catch (IOException e) {
             e.printStackTrace();
+        }finally {
+            if(httpConn!=null) {
+                httpConn.disconnect();
+            }
         }
         return "";
     }
