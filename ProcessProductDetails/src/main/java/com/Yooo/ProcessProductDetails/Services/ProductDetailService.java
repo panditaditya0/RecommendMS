@@ -288,7 +288,7 @@ public class ProductDetailService {
         return "";
     }
 
-    public void gg(final List<KafkaPayload> allKafkaPayload) {
+    public  List<Map<String, Object>> gg(final List<KafkaPayload> allKafkaPayload) {
         String baseUrl = "https://img.perniaspopupshop.com/catalog/product";
         LOGGER.info("No of products -> " + allKafkaPayload.size());
         List<Map<String, Object>> dataObjs = new ArrayList<>();
@@ -325,9 +325,7 @@ public class ProductDetailService {
                 LOGGER.info("No product details found for id " + kafkaPayload.entity_id);
             }
         }
-        if(dataObjs.size() > 0){
-            this.pushToVectorDb(dataObjs);
-        }
+      return dataObjs;
     }
 
 }

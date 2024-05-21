@@ -43,8 +43,12 @@ public class PushController {
 //        executor.submit(() -> {
             for (List<String> sublist : chunks) {
                 ArrayList<KafkaPayload> listOfKafkaProducts = imageRepo.getListOfProducts(sublist);
-                productDetailService.gg(listOfKafkaProducts);
+                List<Map<String, Object>> listOfProps =
+                        productDetailService.gg(listOfKafkaProducts);
+                productDetailService.pushToVectorDb(listOfProps);
                 counter.addAndGet(Integer.valueOf(batchNo));
+                chunks.remove(sublist);
+                System.gc();
                 LOGGER.info( value + "-> processed " + counter.get() + " product details");
             }
             LOGGER.info( value + " -> Compoleted");
