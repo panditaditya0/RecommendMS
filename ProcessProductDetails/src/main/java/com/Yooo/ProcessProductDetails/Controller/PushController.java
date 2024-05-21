@@ -47,7 +47,6 @@ public class PushController {
                         productDetailService.gg(listOfKafkaProducts);
                 productDetailService.pushToVectorDb(listOfProps);
                 counter.addAndGet(Integer.valueOf(batchNo));
-                chunks.remove(sublist);
                 System.gc();
                 LOGGER.info( value + "-> processed " + counter.get() + " product details");
             }
