@@ -47,6 +47,7 @@ public class PushController {
                 counter.addAndGet(3);
                 LOGGER.info( value + "-> processed " + counter.get() + " product details");
             }
+            LOGGER.info( value + " -> Compoleted");
         });
 
         return ResponseEntity.ok("Products -> " + allSkuIds.size());
