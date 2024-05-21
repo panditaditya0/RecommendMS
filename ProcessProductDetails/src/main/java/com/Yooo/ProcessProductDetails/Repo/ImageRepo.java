@@ -14,7 +14,7 @@ public interface ImageRepo extends JpaRepository<KafkaPayload, Long> {
     @Query(value="select * from product_details_2 pd where brand = ?1",  nativeQuery = true)
     List<KafkaPayload> findByBrand(String value);
 
-    @Query(value="select sku_id from product_details_2 pd where parent_category = ?1 and base_64_image is null",  nativeQuery = true)
+    @Query(value="select sku_id from product_details_2 pd where parent_category = ?1 and base_64_image is not null",  nativeQuery = true)
     ArrayList<String> findByParent(String value);
 
     @Query(value = "select sku_id from product_details_2 where brand = ?1 and base_64_image is not null  ",  nativeQuery = true)
