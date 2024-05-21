@@ -38,9 +38,9 @@ public class PushController {
     public ResponseEntity pushToWeaviate(@PathVariable String value) {
         ArrayList<String> allSkuIds = imageRepo.findByParent(value);
         List<List<String>> chunks = Lists.partition(allSkuIds, 3);
-        ExecutorService executor = Executors.newFixedThreadPool(1);
+//        ExecutorService executor = Executors.newFixedThreadPool(1);
         AtomicInteger counter = new AtomicInteger();
-        executor.submit(() -> {
+//        executor.submit(() -> {
             for (List<String> sublist : chunks) {
                 ArrayList<KafkaPayload> listOfKafkaProducts = imageRepo.getListOfProducts(sublist);
                 productDetailService.gg(listOfKafkaProducts);
@@ -48,7 +48,7 @@ public class PushController {
                 LOGGER.info( value + "-> processed " + counter.get() + " product details");
             }
             LOGGER.info( value + " -> Compoleted");
-        });
+//        });
 
         return ResponseEntity.ok("Products -> " + allSkuIds.size());
     }
