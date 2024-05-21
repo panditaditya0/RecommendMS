@@ -34,17 +34,17 @@ public class PushController {
     private RedisTemplate template;
 
     @CrossOrigin
-    @GetMapping("/push/{value}")
-    public ResponseEntity pushToWeaviate(@PathVariable String value) {
-        ArrayList<String> allSkuIds = imageRepo.findByParent(value);
-        List<List<String>> chunks = Lists.partition(allSkuIds, 20);
+    @GetMapping("/push/{value}/{batchNo}")
+    public ResponseEntity pushToWeaviate(@PathVariable String value, @PathVariable String batchNo) {
+        ArrayList<String> allSkuIds = imageRepo.findByParent();
+        List<List<String>> chunks = Lists.partition(allSkuIds, Integer.valueOf(batchNo));
 //        ExecutorService executor = Executors.newFixedThreadPool(1);
         AtomicInteger counter = new AtomicInteger();
 //        executor.submit(() -> {
             for (List<String> sublist : chunks) {
                 ArrayList<KafkaPayload> listOfKafkaProducts = imageRepo.getListOfProducts(sublist);
                 productDetailService.gg(listOfKafkaProducts);
-                counter.addAndGet(3);
+                counter.addAndGet(Integer.valueOf(batchNo));
                 LOGGER.info( value + "-> processed " + counter.get() + " product details");
             }
             LOGGER.info( value + " -> Compoleted");

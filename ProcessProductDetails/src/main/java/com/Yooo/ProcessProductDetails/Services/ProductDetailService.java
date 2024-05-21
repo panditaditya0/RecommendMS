@@ -220,7 +220,7 @@ public class ProductDetailService {
                 batcher.withObject(WeaviateObject.builder()
                         .className(className)
                         .properties(prop)
-                        .id(prop.get("uuid").toString())
+                        .id(prop.get("some_i").toString())
                         .build());
             }
             Result<ObjectGetResponse[]> a = batcher
@@ -315,7 +315,7 @@ public class ProductDetailService {
                 properties.put("sku_id", finalObject1.sku_id);
                 properties.put("product_id", finalObject1.product_id);
                 properties.put("brand", finalObject1.brand);
-                properties.put("uuid", finalObject1.uuid.toString());
+                properties.put("some_i", finalObject1.uuid.toString());
                 properties.put("parentCategory", finalObject1.parent_category);
                 properties.put("childCategories", childCategories.toArray(new String[0]));
                 properties.put("color", finalObject1.color);
