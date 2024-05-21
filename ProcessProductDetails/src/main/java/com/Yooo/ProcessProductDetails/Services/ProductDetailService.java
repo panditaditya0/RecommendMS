@@ -288,6 +288,8 @@ public class ProductDetailService {
         for (KafkaPayload kafkaPayload : allKafkaPayload) {
             if (kafkaPayload.base64Image == null || kafkaPayload.base64Image.length() < 10) {
                 kafkaPayload.base64Image = this.downloadAndDownSizeImage(baseUrl + kafkaPayload.image_link);
+            } else{
+                continue;
             }
 
             Optional productDetailsOptional = imageRepo.findById(kafkaPayload.getEntity_id());

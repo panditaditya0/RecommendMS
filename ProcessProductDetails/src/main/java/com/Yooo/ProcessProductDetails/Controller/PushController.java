@@ -1,6 +1,5 @@
 package com.Yooo.ProcessProductDetails.Controller;
 
-import com.Yooo.ProcessProductDetails.Model.ChildCategoryModel;
 import com.Yooo.ProcessProductDetails.Model.KafkaPayload;
 import com.Yooo.ProcessProductDetails.Repo.ImageRepo;
 import com.Yooo.ProcessProductDetails.Services.ProductDetailService;
@@ -19,6 +18,7 @@ import java.net.http.HttpResponse;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 public class PushController {
@@ -39,10 +39,13 @@ public class PushController {
         ArrayList<String> allSkuIds = imageRepo.findByParent(value);
         List<List<String>> chunks = Lists.partition(allSkuIds, 3);
         ExecutorService executor = Executors.newFixedThreadPool(1);
+        AtomicInteger counter = new AtomicInteger();
         executor.submit(() -> {
             for (List<String> sublist : chunks) {
                 ArrayList<KafkaPayload> listOfKafkaProducts = imageRepo.getListOfProducts(sublist);
                 productDetailService.gg(listOfKafkaProducts);
+                counter.addAndGet(3);
+                LOGGER.info( value + "-> processed " + counter.get() + " product details");
             }
         });
 
