@@ -36,7 +36,7 @@ public class PushController {
     @CrossOrigin
     @GetMapping("/push/{value}/{batchNo}")
     public ResponseEntity pushToWeaviate(@PathVariable String value, @PathVariable String batchNo) {
-        ArrayList<String> allSkuIds = imageRepo.findByParent();
+        ArrayList<String> allSkuIds = imageRepo.findByParent(value);
         List<List<String>> chunks = Lists.partition(allSkuIds, Integer.valueOf(batchNo));
 //        ExecutorService executor = Executors.newFixedThreadPool(1);
         AtomicInteger counter = new AtomicInteger();
