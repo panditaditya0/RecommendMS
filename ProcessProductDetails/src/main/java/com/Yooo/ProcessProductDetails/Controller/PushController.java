@@ -42,8 +42,8 @@ public class PushController {
         AtomicInteger counter = new AtomicInteger();
 //        executor.submit(() -> {
             for (List<String> sublist : chunks) {
-                ArrayList<KafkaPayload> listOfKafkaProducts = new ArrayList<>(imageRepo.getListOfProducts(sublist));
-                List<Map<String, Object>> listOfProps = new ArrayList<>( productDetailService.gg(listOfKafkaProducts));
+                final ArrayList<KafkaPayload> listOfKafkaProducts = new ArrayList<>(imageRepo.getListOfProducts(sublist));
+                final List<Map<String, Object>> listOfProps = new ArrayList<>( productDetailService.gg(listOfKafkaProducts));
                 productDetailService.pushToVectorDb(listOfProps);
                 counter.addAndGet(Integer.valueOf(batchNo));
                 LOGGER.info( value + "-> processed " + counter.get() + " product details");
