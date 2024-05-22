@@ -217,10 +217,12 @@ public class ProductDetailService {
         if (dataObjs.size() > 0) {
             ObjectsBatcher batcher = singleWeaviateClient.weaviateClientMethod().batch().objectsBatcher();
             for (Map<String, Object> prop : dataObjs) {
+                String i_d = prop.get("some_i").toString();
+                prop.remove("some_i");
                 batcher.withObject(WeaviateObject.builder()
                         .className(className)
                         .properties(prop)
-                        .id(prop.get("some_i").toString())
+                        .id(i_d)
                         .build());
             }
             Result<ObjectGetResponse[]> a = batcher

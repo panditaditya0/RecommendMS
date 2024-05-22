@@ -42,13 +42,12 @@ public class PushController {
         AtomicInteger counter = new AtomicInteger();
 //        executor.submit(() -> {
             for (List<String> sublist : chunks) {
-                ArrayList<KafkaPayload> listOfKafkaProducts = imageRepo.getListOfProducts(sublist);
-                List<Map<String, Object>> listOfProps =
-                        productDetailService.gg(listOfKafkaProducts);
+                ArrayList<KafkaPayload> listOfKafkaProducts = new ArrayList<>(imageRepo.getListOfProducts(sublist));
+                List<Map<String, Object>> listOfProps = new ArrayList<>( productDetailService.gg(listOfKafkaProducts));
                 productDetailService.pushToVectorDb(listOfProps);
                 counter.addAndGet(Integer.valueOf(batchNo));
-                System.gc();
                 LOGGER.info( value + "-> processed " + counter.get() + " product details");
+                System.gc();
             }
             LOGGER.info( value + " -> Compoleted");
 //        });
