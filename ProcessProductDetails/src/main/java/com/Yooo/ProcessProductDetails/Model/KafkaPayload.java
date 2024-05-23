@@ -7,10 +7,9 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
-import java.util.Set;
 
 @Entity
-@Table(name = "product_details_2")
+@Table(name = "product_details_3")
 @Getter
 @Setter
 @ToString
@@ -41,8 +40,6 @@ public class KafkaPayload {
     public LocalDateTime updated_at;
     @Column(name = "base_64_image")
     public String base64Image;
-
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "kafka_entity_id", referencedColumnName = "entity_id")
-    public Set<ChildCategoryModel> child_categories;
+    public String categories;
+    public String in_stock;
 }

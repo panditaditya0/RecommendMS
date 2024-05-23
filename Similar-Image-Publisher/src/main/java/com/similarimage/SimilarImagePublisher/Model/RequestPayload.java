@@ -4,8 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.util.ArrayList;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Stream;
 
 @Getter
@@ -33,13 +32,15 @@ public class RequestPayload {
     public float price_row;
     public float discount_row;
     public float special_price_row;
+    public String in_stock;
+    public HashMap<String, ArrayList<String>> parent_child_categories;
 
     public boolean checkAnyNull(){
         return Stream.of(sku_id,product_id
                         ,title,brand,image_link, image_link, discount, link
                         , entity_id, color,domain, parent_category,child_categories
                 ,price_in,discount_in,special_price_in,price_us,discount_us,special_price_us
-                ,price_row,discount_row,special_price_row)
+                ,price_row,discount_row,special_price_row,parent_child_categories)
                 .anyMatch(Objects::isNull);
     }
 }
