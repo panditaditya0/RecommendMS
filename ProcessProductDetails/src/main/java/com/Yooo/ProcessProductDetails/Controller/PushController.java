@@ -1,12 +1,14 @@
 package com.Yooo.ProcessProductDetails.Controller;
 
 import com.Yooo.ProcessProductDetails.Model.KafkaPayload;
+import com.Yooo.ProcessProductDetails.Model.NewkafkaPayload;
 import com.Yooo.ProcessProductDetails.Repo.ImageRepo;
+import com.Yooo.ProcessProductDetails.Repo.NewImageRepo;
 import com.Yooo.ProcessProductDetails.Services.ProductDetailService;
 import com.google.common.collect.Lists;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,28 +23,22 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
+@RequiredArgsConstructor
 public class PushController {
     private final Logger LOGGER = LoggerFactory.getLogger(ProductDetailService.class);
-
-    @Autowired
-    public ImageRepo imageRepo;
-
-    @Autowired
-    public ProductDetailService productDetailService;
-
-    @Autowired
+    public final ImageRepo imageRepo;
+    public final NewImageRepo newImageRepo;
+    public final ProductDetailService productDetailService;
     private RedisTemplate template;
 
     @CrossOrigin
     @GetMapping("/push/{value}/{batchNo}")
     public ResponseEntity pushToWeaviate(@PathVariable String value, @PathVariable String batchNo) {
-        ArrayList<String> allSkuIds = imageRepo.findByParent(value);
+        ArrayList<String> allSkuIds = newImageRepo.findByParent();
         List<List<String>> chunks = Lists.partition(allSkuIds, Integer.valueOf(batchNo));
-//        ExecutorService executor = Executors.newFixedThreadPool(1);
         AtomicInteger counter = new AtomicInteger();
-//        executor.submit(() -> {
             for (List<String> sublist : chunks) {
-                final ArrayList<KafkaPayload> listOfKafkaProducts = new ArrayList<>(imageRepo.getListOfProducts(sublist));
+                final ArrayList<NewkafkaPayload> listOfKafkaProducts = new ArrayList<>(newImageRepo.getListOfProducts(sublist));
                 final List<Map<String, Object>> listOfProps = new ArrayList<>( productDetailService.gg(listOfKafkaProducts));
                 productDetailService.pushToVectorDb(listOfProps);
                 counter.addAndGet(Integer.valueOf(batchNo));
@@ -50,8 +46,6 @@ public class PushController {
                 System.gc();
             }
             LOGGER.info( value + " -> Compoleted");
-//        });
-
         return ResponseEntity.ok("Products -> " + allSkuIds.size());
     }
 
@@ -70,17 +64,17 @@ public class PushController {
         return ResponseEntity.ok().build();
     }
 
-    @CrossOrigin
-    @GetMapping("/pushAll")
-    public ResponseEntity pushAll() {
-        List<String> allSkuIds = imageRepo.listOfAllSkuIds();
-        List<List<String>> chunks = Lists.partition(allSkuIds, 3);
-        for (List<String> sublist : chunks) {
-            ArrayList<KafkaPayload> listOfKafkaProducts = imageRepo.getListOfProducts(sublist);
-            productDetailService.gg(listOfKafkaProducts);
-        }
-        return ResponseEntity.ok().build();
-    }
+//    @CrossOrigin
+//    @GetMapping("/pushAll")
+//    public ResponseEntity pushAll() {
+//        List<String> allSkuIds = newImageRepo.listOfAllSkuIds();
+//        List<List<String>> chunks = Lists.partition(allSkuIds, 3);
+//        for (List<String> sublist : chunks) {
+//            ArrayList<NewkafkaPayload> listOfKafkaProducts = newImageRepo.getListOfProducts(sublist);
+//            productDetailService.gg(listOfKafkaProducts);
+//        }
+//        return ResponseEntity.ok().build();
+//    }
 
     @CrossOrigin
     @GetMapping("/push/allImages")
@@ -88,7 +82,7 @@ public class PushController {
         List<String> allSkuIds = imageRepo.listOfAllSkuIds();
         List<List<String>> chunks = Lists.partition(allSkuIds, 3);
         for (List<String> sublist : chunks) {
-            ArrayList<KafkaPayload> listOfKafkaProducts = imageRepo.getListOfProducts(sublist);
+            ArrayList<NewkafkaPayload> listOfKafkaProducts = newImageRepo.getListOfProducts(sublist);
             productDetailService.gg(listOfKafkaProducts);
         }
         return ResponseEntity.ok().build();
@@ -155,6 +149,47 @@ public class PushController {
             }
         }
         System.out.println("Completed");
+    }
+
+    @CrossOrigin
+    @GetMapping("/push/hh")
+    public ResponseEntity transferDb() {
+       ArrayList<Long> listOfAllWithImages = imageRepo.findAllImages();
+        List<List<Long>> sublists = Lists.partition(listOfAllWithImages, 30);
+        ExecutorService executor = Executors.newFixedThreadPool(30);
+        for (List<Long> sublist : sublists) {
+            executor.submit(() -> processIt(sublist));
+        }
+        executor.shutdown();
+
+        return ResponseEntity.ok().build();
+    }
+
+    public void processIt(List<Long> listOfAllWithImages){
+        for (Long id : listOfAllWithImages) {
+            try{
+                Optional kafkaPayload2 = imageRepo.findById(id);
+                if(kafkaPayload2.isPresent()){
+                    KafkaPayload kafkaPayload = (KafkaPayload) kafkaPayload2.get();
+                    Optional newKafkaPayloadOptional = newImageRepo.findById(id);
+                    if (newKafkaPayloadOptional.isPresent()){
+                        NewkafkaPayload newkafkaPayload = (NewkafkaPayload) newKafkaPayloadOptional.get();
+                        newkafkaPayload.base64Image = kafkaPayload.base64Image;
+                        newImageRepo.save(newkafkaPayload);
+                    }
+                    else {
+                        System.out.println("ERROR FOR -> "+ id);
+
+                    }
+                }else {
+                    System.out.println("ERROR FOR 2 -> "+ id);
+
+                }
+            } catch (Exception ex){
+                System.out.println("Error in -> "+ id + " : " + ex.getMessage());
+            }
+
+        }
     }
 }
 

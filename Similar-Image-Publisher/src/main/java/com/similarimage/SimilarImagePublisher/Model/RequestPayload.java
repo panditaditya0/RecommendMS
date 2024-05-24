@@ -33,7 +33,7 @@ public class RequestPayload {
     public float discount_row;
     public float special_price_row;
     public String in_stock;
-    public HashMap<String, ArrayList<String>> parent_child_categories;
+    public ArrayList<RecommendCategoryDto> parent_child_categories;
 
     public boolean checkAnyNull(){
         return Stream.of(sku_id,product_id

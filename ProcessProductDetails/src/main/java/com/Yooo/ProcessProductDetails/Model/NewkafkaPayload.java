@@ -1,21 +1,23 @@
 package com.Yooo.ProcessProductDetails.Model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
-import java.util.Set;
 
 @Entity
-@Table(name = "product_details_2")
+@Table(name = "product_details_3")
 @Getter
 @Setter
 @ToString
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class KafkaPayload {
+public class NewkafkaPayload {
     @Id
     public long entity_id;
     public String sku_id;
@@ -41,8 +43,6 @@ public class KafkaPayload {
     public LocalDateTime updated_at;
     @Column(name = "base_64_image")
     public String base64Image;
-
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "kafka_entity_id", referencedColumnName = "entity_id")
-    public Set<ChildCategoryModel> child_categories;
+    public String categories;
+    public String in_stock;
 }

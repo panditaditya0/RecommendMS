@@ -2,7 +2,9 @@ package com.Yooo.ProcessProductDetails.Services;
 
 import com.Yooo.ProcessProductDetails.Config.SingleWeaviateClient;
 import com.Yooo.ProcessProductDetails.Model.KafkaPayload;
+import com.Yooo.ProcessProductDetails.Model.NewkafkaPayload;
 import com.Yooo.ProcessProductDetails.Repo.ImageRepo;
+import com.Yooo.ProcessProductDetails.Repo.NewImageRepo;
 import com.google.gson.Gson;
 import io.weaviate.client.base.Result;
 import io.weaviate.client.v1.batch.api.ObjectsBatcher;
@@ -29,30 +31,35 @@ import java.util.List;
 @Service
 public class ProductDetailService {
     private final Logger LOGGER = LoggerFactory.getLogger(ProductDetailService.class);
+    private final NewImageRepo newImageRepo;
     public ImageRepo imageRepo;
     public final String className = "TestImg16";  // Replace with your class name
     private SingleWeaviateClient singleWeaviateClient;
     DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
 
-    public ProductDetailService(ImageRepo imageRep, SingleWeaviateClient singleWeaviateClient) {
+    public ProductDetailService(ImageRepo imageRep, SingleWeaviateClient singleWeaviateClient, NewImageRepo newImageRepo) {
         this.imageRepo = imageRep;
         this.singleWeaviateClient = singleWeaviateClient;
+        this.newImageRepo = newImageRepo;
     }
 
-    public KafkaPayload updateProductDetailsToDb(KafkaPayload newData, Optional oldData) {
+    public NewkafkaPayload updateProductDetailsToDb(NewkafkaPayload newData, Optional oldData) {
         try {
-            KafkaPayload productDetailsFromSb = (KafkaPayload) oldData.get();
+            NewkafkaPayload productDetailsFromSb = (NewkafkaPayload) oldData.get();
             newData.setUuid(productDetailsFromSb.getUuid());
+            if(productDetailsFromSb.base64Image != null && productDetailsFromSb.base64Image.length() >10) {
+                newData.base64Image = productDetailsFromSb.base64Image;
+            }
         } catch (Exception ex) {
            throw new RuntimeException("Error updating product details"+newData.entity_id+" " + ex.getMessage());
         }
-        return imageRepo.save(newData);
+        return newImageRepo.save(newData);
     }
 
-    private KafkaPayload saveImageDetailsToDb(KafkaPayload productDetails) {
+    private NewkafkaPayload saveImageDetailsToDb(NewkafkaPayload productDetails) {
         try {
             productDetails.setUuid(UUID.randomUUID().toString());
-            imageRepo.save(productDetails);
+            newImageRepo.save(productDetails);
             LOGGER.info("NEW ENTRY " + productDetails.getEntity_id());
         } catch (Exception ex) {
             LOGGER.error("ERROR FOR " + productDetails.getEntity_id() + ex.getMessage() + ex.getStackTrace());
@@ -61,14 +68,14 @@ public class ProductDetailService {
     }
 
     public void processProductDetails(List<HashMap<String, Object>> allProductDetails) {
-        ArrayList<KafkaPayload> allProductsDetails = new ArrayList<>();
+        ArrayList<NewkafkaPayload> allProductsDetails = new ArrayList<>();
         try {
 
             for (HashMap<String, Object> map : allProductDetails) {
                 Gson gson = new Gson();
                 String categories = gson.toJson(map.get("parent_child_categories"));
 //                KafkaPayload fromDbOptional= imageRepo.findById(Long.parseLong((String) map.get("entity_id"))).get();
-                KafkaPayload payload = new KafkaPayload();
+                NewkafkaPayload payload = new NewkafkaPayload();
                 payload.setEntity_id(Long.parseLong((String) map.get("entity_id")));
                 payload.setSku_id((String) map.get("sku_id"));
                 payload.setProduct_id((String) map.get("product_id"));
@@ -95,8 +102,8 @@ public class ProductDetailService {
 //                payload.setBase64Image(fromDbOptional.base64Image);
                 allProductsDetails.add(payload);
 
-                Optional productDetailsOptional = imageRepo.findById(payload.getEntity_id());
-                KafkaPayload finalObject = new KafkaPayload();
+                Optional productDetailsOptional = newImageRepo.findById(payload.getEntity_id());
+                NewkafkaPayload finalObject = new NewkafkaPayload();
 //                aKafkaProductPayload.base64Image = downloadAndDownSizeImagedownloadAndDownSizeImage(baseUrl+ productDetails.image_link);
                 if (productDetailsOptional.isEmpty()) {
                     finalObject = this.saveImageDetailsToDb(payload);
@@ -186,12 +193,12 @@ public class ProductDetailService {
         return "";
     }
 
-    public  List<Map<String, Object>> gg(final List<KafkaPayload> allKafkaPayload) {
+    public List<Map<String, Object>> gg(final List<NewkafkaPayload> allKafkaPayload) {
         String baseUrl = "https://img.perniaspopupshop.com/catalog/product";
         LOGGER.info("No of products -> " + allKafkaPayload.size());
         List<Map<String, Object>> dataObjs = new ArrayList<>();
 
-        for (KafkaPayload kafkaPayload : allKafkaPayload) {
+        for (NewkafkaPayload kafkaPayload : allKafkaPayload) {
             if (kafkaPayload.base64Image == null || kafkaPayload.base64Image.length() < 10) {
                 kafkaPayload.base64Image = this.downloadAndDownSizeImage(baseUrl + kafkaPayload.image_link);
             }
@@ -199,21 +206,25 @@ public class ProductDetailService {
 //                continue;
 //            }
 
-            Optional productDetailsOptional = imageRepo.findById(kafkaPayload.getEntity_id());
-            if (productDetailsOptional.isPresent()) {
-                KafkaPayload finalObject1 = this.updateProductDetailsToDb(kafkaPayload, productDetailsOptional);
-                Map<String, Object> properties = new HashMap<>();
-                properties.put("image", finalObject1.base64Image);
-                properties.put("sku_id", finalObject1.sku_id);
-                properties.put("product_id", finalObject1.product_id);
-                properties.put("brand", finalObject1.brand);
-                properties.put("some_i", finalObject1.uuid.toString());
-                properties.put("parentCategory", finalObject1.parent_category);
-                properties.put("color", finalObject1.color);
-                dataObjs.add(properties);
-            } else {
-                LOGGER.info("No product details found for id " + kafkaPayload.entity_id);
-            }
+
+//
+//            Optional productDetailsOptional = imageRepo.findById(kafkaPayload.getEntity_id());
+//            if (productDetailsOptional.isPresent()) {
+//                NewkafkaPayload finalObject1 = this.updateProductDetailsToDb(NewkafkaPayload, productDetailsOptional);
+//                Map<String, Object> properties = new HashMap<>();
+//                properties.put("image", finalObject1.base64Image);
+//                properties.put("sku_id", finalObject1.sku_id);
+//                properties.put("product_id", finalObject1.product_id);
+//                properties.put("brand", finalObject1.brand);
+//                properties.put("some_i", finalObject1.uuid.toString());
+//                properties.put("parentCategory", finalObject1.parent_category);
+//                properties.put("color", finalObject1.color);
+//                properties.put("in_stock",finalObject1.in_stock);
+////                properties.put("categories")
+//                dataObjs.add(properties);
+//            } else {
+//                LOGGER.info("No product details found for id " + kafkaPayload.entity_id);
+//            }
         }
       return dataObjs;
     }
