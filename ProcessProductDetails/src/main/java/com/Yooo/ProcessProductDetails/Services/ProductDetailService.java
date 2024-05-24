@@ -43,9 +43,9 @@ public class ProductDetailService {
         try {
             NewkafkaPayload productDetailsFromSb = (NewkafkaPayload) oldData.get();
             newData.setUuid(productDetailsFromSb.getUuid());
-//            if(productDetailsFromSb.base64Image != null && productDetailsFromSb.base64Image.length() >10) {
-//                newData.base64Image = productDetailsFromSb.base64Image;
-//            }
+            if(productDetailsFromSb.base64Image != null && productDetailsFromSb.base64Image.length() >10) {
+                newData.base64Image = productDetailsFromSb.base64Image;
+            }
         } catch (Exception ex) {
            throw new RuntimeException("Error updating product details"+newData.entity_id+" " + ex.getMessage());
         }
