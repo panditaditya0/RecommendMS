@@ -36,7 +36,7 @@ public class ProductDetailService {
     private final Logger LOGGER = LoggerFactory.getLogger(ProductDetailService.class);
     private final NewImageRepo newImageRepo;
     private final ImageRepo imageRepo;
-    private final String className = "TestImg17";  // Replace with your class name
+    private final String className = "TestImg18";  // Replace with your class name
     private final SingleWeaviateClient singleWeaviateClient;
     DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
 
@@ -207,17 +207,16 @@ public class ProductDetailService {
             if (productDetailsOptional.isPresent()) {
                 NewkafkaPayload finalObject1 = this.updateProductDetailsToDb(kafkaPayload, productDetailsOptional);
                 ArrayList<RecommendCategoryDto> a = gson.fromJson(finalObject1.categories, ArrayList.class);
-
                 Map<String, Object> properties = new HashMap<>();
                 properties.put("image", finalObject1.base64Image);
                 properties.put("sku_id", finalObject1.sku_id);
                 properties.put("product_id", finalObject1.product_id);
                 properties.put("brand", finalObject1.brand);
                 properties.put("some_i", finalObject1.uuid.toString());
-//                properties.put("parentCategory", finalObject1.parent_category);
                 properties.put("color", finalObject1.color);
                 properties.put("in_stock",finalObject1.in_stock);
-                properties.put("categories", a);
+                properties.put("parent_categories", finalObject1.parent_categories);
+                properties.put("child_categories", finalObject1.child_categories);
                 dataObjs.add(properties);
             } else {
                 LOGGER.info("No product details found for id " + kafkaPayload.entity_id);
