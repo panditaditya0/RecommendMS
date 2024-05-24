@@ -55,40 +55,40 @@ public class KafkaConfig {
         LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
         productDetailService.processProductDetails(productDetails);
     }
-
-    @KafkaListener(topics = "testTopic", groupId = "group-008")
-    public void consume6(@Payload List<HashMap<String, Object>> productDetails) {
-        LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
-        productDetailService.processProductDetails(productDetails);
-    }
-
-
-    @KafkaListener(topics = "testTopic", groupId = "group-008")
-    public void consume7(@Payload List<HashMap<String, Object>> productDetails) {
-        LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
-        productDetailService.processProductDetails(productDetails);
-    }
-
-
-    @KafkaListener(topics = "testTopic", groupId = "group-008")
-    public void consume8(@Payload List<HashMap<String, Object>> productDetails) {
-        LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
-        productDetailService.processProductDetails(productDetails);
-    }
-
-
-    @KafkaListener(topics = "testTopic", groupId = "group-008")
-    public void consume9(@Payload List<HashMap<String, Object>> productDetails) {
-        LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
-        productDetailService.processProductDetails(productDetails);
-    }
-
-
-    @KafkaListener(topics = "testTopic", groupId = "group-008")
-    public void consume10(@Payload List<HashMap<String, Object>> productDetails) {
-        LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
-        productDetailService.processProductDetails(productDetails);
-    }
+//
+//    @KafkaListener(topics = "testTopic", groupId = "group-008")
+//    public void consume6(@Payload List<HashMap<String, Object>> productDetails) {
+//        LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
+//        productDetailService.processProductDetails(productDetails);
+//    }
+//
+//
+//    @KafkaListener(topics = "testTopic", groupId = "group-008")
+//    public void consume7(@Payload List<HashMap<String, Object>> productDetails) {
+//        LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
+//        productDetailService.processProductDetails(productDetails);
+//    }
+//
+//
+//    @KafkaListener(topics = "testTopic", groupId = "group-008")
+//    public void consume8(@Payload List<HashMap<String, Object>> productDetails) {
+//        LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
+//        productDetailService.processProductDetails(productDetails);
+//    }
+//
+//
+//    @KafkaListener(topics = "testTopic", groupId = "group-008")
+//    public void consume9(@Payload List<HashMap<String, Object>> productDetails) {
+//        LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
+//        productDetailService.processProductDetails(productDetails);
+//    }
+//
+//
+//    @KafkaListener(topics = "testTopic", groupId = "group-008")
+//    public void consume10(@Payload List<HashMap<String, Object>> productDetails) {
+//        LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
+//        productDetailService.processProductDetails(productDetails);
+//    }
 
     @Bean
     public Map<String, Object> consumerConfig() {
