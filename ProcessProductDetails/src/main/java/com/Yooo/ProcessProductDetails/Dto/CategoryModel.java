@@ -1,4 +1,4 @@
-package com.Yooo.ProcessProductDetails.Model;
+package com.Yooo.ProcessProductDetails.Dto;
 
 import lombok.Getter;
 import lombok.Setter;

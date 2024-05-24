@@ -12,5 +12,4 @@ public class ProcessProductDetailsApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(ProcessProductDetailsApplication.class, args);
 	}
-
 }

@@ -13,6 +13,9 @@ public interface NewImageRepo extends JpaRepository<NewkafkaPayload, Long> {
     @Query(value="select sku_id from product_details_3 pd where base_64_image is not null",  nativeQuery = true)
     ArrayList<String> findByParent();
 
-    @Query(value = "select * from product_details_3 where sku_id in (?1)",  nativeQuery = true)
-    ArrayList<NewkafkaPayload> getListOfProducts(List<String> sublist);
+    @Query(value = "select * from product_details_3 where entity_id in (?1)",  nativeQuery = true)
+    ArrayList<NewkafkaPayload> getListOfProducts(List<Long> sublist);
+
+    @Query(value="select entity_id  from product_details_3 pd  where base_64_image is not null and categories is not null\n",  nativeQuery = true)
+    ArrayList<Long> pushSomeImages();
 }

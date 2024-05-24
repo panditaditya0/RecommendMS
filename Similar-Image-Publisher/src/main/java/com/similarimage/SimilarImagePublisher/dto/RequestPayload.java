@@ -1,15 +1,17 @@
-package com.similarimage.SimilarImagePublisher.Model;
+package com.similarimage.SimilarImagePublisher.dto;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 import java.util.*;
 import java.util.stream.Stream;
 
+@Data
 @Getter
 @Setter
+@Builder
 @ToString
+@NoArgsConstructor
+@AllArgsConstructor
 public class RequestPayload {
     public String sku_id;
     public String product_id;
@@ -21,8 +23,8 @@ public class RequestPayload {
     public String entity_id;
     public String color;
     public String domain;
-    public String parent_category;
     public ArrayList<String> child_categories;
+    public ArrayList<String> parent_categories;
     public float price_in;
     public float discount_in;
     public float special_price_in;
@@ -33,14 +35,12 @@ public class RequestPayload {
     public float discount_row;
     public float special_price_row;
     public String in_stock;
-    public ArrayList<RecommendCategoryDto> parent_child_categories;
-
     public boolean checkAnyNull(){
         return Stream.of(sku_id,product_id
                         ,title,brand,image_link, image_link, discount, link
-                        , entity_id, color,domain, parent_category,child_categories
+                        , entity_id, color,domain, parent_categories,child_categories
                 ,price_in,discount_in,special_price_in,price_us,discount_us,special_price_us
-                ,price_row,discount_row,special_price_row,parent_child_categories)
+                ,price_row,discount_row,special_price_row)
                 .anyMatch(Objects::isNull);
     }
 }

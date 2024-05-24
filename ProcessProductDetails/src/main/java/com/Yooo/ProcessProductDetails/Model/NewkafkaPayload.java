@@ -8,8 +8,11 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "product_details_3")
@@ -45,4 +48,10 @@ public class NewkafkaPayload {
     public String base64Image;
     public String categories;
     public String in_stock;
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "child_categories", columnDefinition = "text[]")
+    public List<String> child_categories;
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "parent_categories", columnDefinition = "text[]")
+    public List<String> parent_categories;
 }

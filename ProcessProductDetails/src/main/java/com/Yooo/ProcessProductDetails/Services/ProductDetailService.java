@@ -1,8 +1,8 @@
 package com.Yooo.ProcessProductDetails.Services;
 
 import com.Yooo.ProcessProductDetails.Config.SingleWeaviateClient;
-import com.Yooo.ProcessProductDetails.Model.KafkaPayload;
 import com.Yooo.ProcessProductDetails.Model.NewkafkaPayload;
+import com.Yooo.ProcessProductDetails.Dto.RecommendCategoryDto;
 import com.Yooo.ProcessProductDetails.Repo.ImageRepo;
 import com.Yooo.ProcessProductDetails.Repo.NewImageRepo;
 import com.google.gson.Gson;
@@ -11,6 +11,7 @@ import io.weaviate.client.v1.batch.api.ObjectsBatcher;
 import io.weaviate.client.v1.batch.model.ObjectGetResponse;
 import io.weaviate.client.v1.data.model.WeaviateObject;
 import io.weaviate.client.v1.data.replication.model.ConsistencyLevel;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -29,33 +30,27 @@ import java.util.*;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class ProductDetailService {
     private final Logger LOGGER = LoggerFactory.getLogger(ProductDetailService.class);
     private final NewImageRepo newImageRepo;
-    public ImageRepo imageRepo;
-    public final String className = "TestImg16";  // Replace with your class name
-    private SingleWeaviateClient singleWeaviateClient;
+    private final ImageRepo imageRepo;
+    private final String className = "TestImg17";  // Replace with your class name
+    private final SingleWeaviateClient singleWeaviateClient;
     DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
 
-    public ProductDetailService(ImageRepo imageRep, SingleWeaviateClient singleWeaviateClient, NewImageRepo newImageRepo) {
-        this.imageRepo = imageRep;
-        this.singleWeaviateClient = singleWeaviateClient;
-        this.newImageRepo = newImageRepo;
-    }
-
-    public NewkafkaPayload updateProductDetailsToDb(NewkafkaPayload newData, Optional oldData) {
+    private NewkafkaPayload updateProductDetailsToDb(NewkafkaPayload newData, Optional oldData) {
         try {
             NewkafkaPayload productDetailsFromSb = (NewkafkaPayload) oldData.get();
             newData.setUuid(productDetailsFromSb.getUuid());
-            if(productDetailsFromSb.base64Image != null && productDetailsFromSb.base64Image.length() >10) {
-                newData.base64Image = productDetailsFromSb.base64Image;
-            }
+//            if(productDetailsFromSb.base64Image != null && productDetailsFromSb.base64Image.length() >10) {
+//                newData.base64Image = productDetailsFromSb.base64Image;
+//            }
         } catch (Exception ex) {
            throw new RuntimeException("Error updating product details"+newData.entity_id+" " + ex.getMessage());
         }
         return newImageRepo.save(newData);
     }
-
     private NewkafkaPayload saveImageDetailsToDb(NewkafkaPayload productDetails) {
         try {
             productDetails.setUuid(UUID.randomUUID().toString());
@@ -100,6 +95,8 @@ public class ProductDetailService {
                 payload.setUpdated_at(LocalDateTime.parse(LocalDateTime.now().format(dateTimeFormatter), dateTimeFormatter));
                 payload.setCategories((String) categories);
 //                payload.setBase64Image(fromDbOptional.base64Image);
+                payload.setParent_categories((List<String>) map.get("parent_categories"));
+                payload.setChild_categories((List<String>) map.get("child_categories"));
                 allProductsDetails.add(payload);
 
                 Optional productDetailsOptional = newImageRepo.findById(payload.getEntity_id());
@@ -202,31 +199,29 @@ public class ProductDetailService {
             if (kafkaPayload.base64Image == null || kafkaPayload.base64Image.length() < 10) {
                 kafkaPayload.base64Image = this.downloadAndDownSizeImage(baseUrl + kafkaPayload.image_link);
             }
-//            else{
-//                continue;
-//            }
 
+            Gson gson = new Gson();
 
-//
-//            Optional productDetailsOptional = imageRepo.findById(kafkaPayload.getEntity_id());
-//            if (productDetailsOptional.isPresent()) {
-//                NewkafkaPayload finalObject1 = this.updateProductDetailsToDb(NewkafkaPayload, productDetailsOptional);
-//                Map<String, Object> properties = new HashMap<>();
-//                properties.put("image", finalObject1.base64Image);
-//                properties.put("sku_id", finalObject1.sku_id);
-//                properties.put("product_id", finalObject1.product_id);
-//                properties.put("brand", finalObject1.brand);
-//                properties.put("some_i", finalObject1.uuid.toString());
+            Optional productDetailsOptional = newImageRepo.findById(kafkaPayload.getEntity_id());
+            if (productDetailsOptional.isPresent()) {
+                NewkafkaPayload finalObject1 = this.updateProductDetailsToDb(kafkaPayload, productDetailsOptional);
+                ArrayList<RecommendCategoryDto> a = gson.fromJson(finalObject1.categories, ArrayList.class);
+
+                Map<String, Object> properties = new HashMap<>();
+                properties.put("image", finalObject1.base64Image);
+                properties.put("sku_id", finalObject1.sku_id);
+                properties.put("product_id", finalObject1.product_id);
+                properties.put("brand", finalObject1.brand);
+                properties.put("some_i", finalObject1.uuid.toString());
 //                properties.put("parentCategory", finalObject1.parent_category);
-//                properties.put("color", finalObject1.color);
-//                properties.put("in_stock",finalObject1.in_stock);
-////                properties.put("categories")
-//                dataObjs.add(properties);
-//            } else {
-//                LOGGER.info("No product details found for id " + kafkaPayload.entity_id);
-//            }
+                properties.put("color", finalObject1.color);
+                properties.put("in_stock",finalObject1.in_stock);
+                properties.put("categories", a);
+                dataObjs.add(properties);
+            } else {
+                LOGGER.info("No product details found for id " + kafkaPayload.entity_id);
+            }
         }
       return dataObjs;
     }
-
 }
