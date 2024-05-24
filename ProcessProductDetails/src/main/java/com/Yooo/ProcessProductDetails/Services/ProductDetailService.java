@@ -1,6 +1,7 @@
 package com.Yooo.ProcessProductDetails.Services;
 
 import com.Yooo.ProcessProductDetails.Config.SingleWeaviateClient;
+import com.Yooo.ProcessProductDetails.Model.KafkaPayload;
 import com.Yooo.ProcessProductDetails.Model.NewkafkaPayload;
 import com.Yooo.ProcessProductDetails.Dto.RecommendCategoryDto;
 import com.Yooo.ProcessProductDetails.Repo.ImageRepo;
@@ -69,7 +70,7 @@ public class ProductDetailService {
             for (HashMap<String, Object> map : allProductDetails) {
                 Gson gson = new Gson();
                 String categories = gson.toJson(map.get("parent_child_categories"));
-//                KafkaPayload fromDbOptional= imageRepo.findById(Long.parseLong((String) map.get("entity_id"))).get();
+                KafkaPayload fromDbOptional= imageRepo.findById(Long.parseLong((String) map.get("entity_id"))).get();
                 NewkafkaPayload payload = new NewkafkaPayload();
                 payload.setEntity_id(Long.parseLong((String) map.get("entity_id")));
                 payload.setSku_id((String) map.get("sku_id"));
@@ -94,7 +95,7 @@ public class ProductDetailService {
                 payload.setIn_stock((String) map.get("in_stock"));
                 payload.setUpdated_at(LocalDateTime.parse(LocalDateTime.now().format(dateTimeFormatter), dateTimeFormatter));
                 payload.setCategories((String) categories);
-//                payload.setBase64Image(fromDbOptional.base64Image);
+                payload.setBase64Image(fromDbOptional.base64Image);
                 payload.setParent_categories((List<String>) map.get("parent_categories"));
                 payload.setChild_categories((List<String>) map.get("child_categories"));
                 allProductsDetails.add(payload);

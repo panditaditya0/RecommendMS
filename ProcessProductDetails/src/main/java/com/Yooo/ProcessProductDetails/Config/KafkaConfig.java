@@ -26,7 +26,7 @@ public class KafkaConfig {
     @Autowired
     public ProductDetailService productDetailService;
 
-    @KafkaListener(topics = "testTopic", groupId = "group-008",concurrency = "5")
+    @KafkaListener(topics = "testTopic", groupId = "group-008",concurrency = "7")
     public void consume1(@Payload List<HashMap<String, Object>> productDetails) {
         LOGGER.info("CONTAINS -> lists ->  " + productDetails.size());
         productDetailService.processProductDetails(productDetails);
