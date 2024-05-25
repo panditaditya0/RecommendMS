@@ -25,6 +25,7 @@ public class PushController {
     @GetMapping("/push/allImages")
     public ResponseEntity pushAllImages(){
         List<Long> allSkuIds = newImageRepo.pushSomeImages();
+        Collections.reverse(allSkuIds);
         List<List<Long>> chunks = Lists.partition(allSkuIds, 25);
         int counter = 0;
         for (List<Long> sublist : chunks) {
