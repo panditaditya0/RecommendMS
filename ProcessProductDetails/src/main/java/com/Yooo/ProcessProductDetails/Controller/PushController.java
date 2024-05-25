@@ -26,10 +26,19 @@ public class PushController {
     public ResponseEntity pushAllImages(){
         List<Long> allSkuIds = newImageRepo.pushSomeImages();
         List<List<Long>> chunks = Lists.partition(allSkuIds, 25);
+        int counter = 0;
         for (List<Long> sublist : chunks) {
-            ArrayList<NewkafkaPayload> listOfKafkaProducts = newImageRepo.getListOfProducts(sublist);
-            final List<Map<String, Object>> listOfProps = productDetailService.gg(listOfKafkaProducts);
-            productDetailService.pushToVectorDb(listOfProps);
+            try{
+                ArrayList<NewkafkaPayload> listOfKafkaProducts = newImageRepo.getListOfProducts(sublist);
+                final List<Map<String, Object>> listOfProps = productDetailService.gg(listOfKafkaProducts);
+                productDetailService.pushToVectorDb(listOfProps);
+                counter +=listOfProps.size();
+                log.info("Pushed ->  "+ counter);
+                Thread.sleep(2);
+            } catch (Exception ex){
+                log.error(ex.getMessage());
+            }
+
         }
         return ResponseEntity.ok().build();
     }
