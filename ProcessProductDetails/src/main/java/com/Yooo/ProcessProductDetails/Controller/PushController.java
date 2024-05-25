@@ -31,9 +31,9 @@ public class PushController {
         for (List<Long> sublist : chunks) {
             try{
                 ArrayList<NewkafkaPayload> listOfKafkaProducts = newImageRepo.getListOfProducts(sublist);
-//                final List<Map<String, Object>> listOfProps = productDetailService.gg(listOfKafkaProducts);
-//                productDetailService.pushToVectorDb(listOfProps);
-//                counter +=listOfProps.size();
+                final List<Map<String, Object>> listOfProps = productDetailService.gg(listOfKafkaProducts);
+                productDetailService.pushToVectorDb(listOfProps);
+                counter +=listOfProps.size();
                 log.info("Pushed ->  "+ counter);
                 System.gc();
                 Thread.sleep(2);
